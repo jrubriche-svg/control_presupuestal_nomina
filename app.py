@@ -388,7 +388,7 @@ def cargar_datos_originales(_fuerza_actualizacion=False):
     """
     try:
         # URL DE TU GOOGLE SHEETS
-        BASE_URL = "https://docs.google.com/spreadsheets/d/1IHHoIxwkfs3Fre-gYVjHDkRIBeyP3vPP/export?format=csv"
+        BASE_URL = "https://docs.google.com/spreadsheets/d/1MK6NNx5YEqo_19xdSwpXg_WRYd52GPTpFPeVMYeZCNo/export?format=csv&gid=0"
 
         
         # Estrategia: Si es forzado, agregamos timestamp único
@@ -461,9 +461,9 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
         return None, None
     
     try:        
-        # 🔹 CALCULAR 'ultimos_dos' LOCALMENTE (IMPORTANTE)
-        ultimos_dos = pd.to_numeric(
-            df["Codigo_O"].astype(str).str[-2:], 
+        # 🔹 CALCULAR 'ultimos_cuatro' LOCALMENTE (IMPORTANTE)
+        ultimos_cuatro = pd.to_numeric(
+            df["Codigo_O"].astype(str).str[-4:], 
             errors="coerce"
         )
         
@@ -473,9 +473,9 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
         # --- 🔹 1. SGP CSF (Salarios + Parafiscales) ---
         filtro_csf = (
             (df["Codigo"] == "2-100-I002") & 
-            (ultimos_dos.between(1, 13) |
-             ultimos_dos.between(20, 29) |
-             ultimos_dos.between(33, 51))
+            (ultimos_cuatro.between(1001, 1013) |
+             ultimos_cuatro.between(2020, 2031) |
+             ultimos_cuatro.between(3033, 3051))
         )    
         
         csf = {
@@ -486,7 +486,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_csf, "RECURSOS SIN EJECUTAR"].sum()
         }
          
-        filtro_FOMAG_SSF_Empleado = (df["Codigo"].isin(["2-100-I002", "2-100-I001"]) & (ultimos_dos.isin([17,58, 59])))
+        filtro_FOMAG_SSF_Empleado = (df["Codigo"].isin(["2-100-I002", "2-100-I001"]) & (ultimos_cuatro.isin([1017, 3058, 3059])))
          
         FOMAG_SSF_Empleado = {
             "DISPONIBLE": df.loc[filtro_FOMAG_SSF_Empleado, "DISPONIBLE"].sum(),
@@ -496,7 +496,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_FOMAG_SSF_Empleado, "RECURSOS SIN EJECUTAR"].sum()
         } 
         
-        filtro_FOMAG_SSF_Patron = ((df["Codigo"] == "2-100-I001") & (ultimos_dos.isin([18,19, 60, 61, 62, 63])))
+        filtro_FOMAG_SSF_Patron = ((df["Codigo"] == "2-100-I001") & (ultimos_cuatro.isin([1018,1019, 3060, 3061, 3062, 3063])))
          
         FOMAG_SSF_Patron = {
             "DISPONIBLE": df.loc[filtro_FOMAG_SSF_Patron, "DISPONIBLE"].sum(),
@@ -506,7 +506,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_FOMAG_SSF_Patron, "RECURSOS SIN EJECUTAR"].sum()
         }
          
-        filtro_FOMAG_CSF = ((df["Codigo"] == "2-100-I002") & (ultimos_dos.isin([52, 54])))
+        filtro_FOMAG_CSF = ((df["Codigo"] == "2-100-I002") & (ultimos_cuatro.isin([3052, 3054])))
          
         FOMAG_CSF = {
             "DISPONIBLE": df.loc[filtro_FOMAG_CSF, "DISPONIBLE"].sum(),
@@ -517,7 +517,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
         }
          
         filtro_TOTAL_DOC_SGP = (df["Codigo"].isin(["2-100-I002", "2-100-I001"]) 
-            & ultimos_dos.between(1, 63))
+            & ultimos_cuatro.between(1001, 3063))
          
         TOTAL_DOC_SGP = {
             "DISPONIBLE": df.loc[filtro_TOTAL_DOC_SGP, "DISPONIBLE"].sum(),
@@ -527,7 +527,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_TOTAL_DOC_SGP, "RECURSOS SIN EJECUTAR"].sum()
         }
          
-        filtro_ADTIVOS_SGP = ((df["Codigo"] == "2-100-I002") & (ultimos_dos.isin([65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86])))
+        filtro_ADTIVOS_SGP = (df["Codigo"].isin(["2-100-I002", "2-100-I026"]) & (ultimos_cuatro.isin([3065, 3066, 3067, 3068, 3069, 3070, 3071, 3072, 3073, 3074, 3075, 3076, 3077, 3078, 3079, 3080, 3081, 3082, 3083, 3084, 3085, 3086])))
          
         ADTIVOS_SGP = {
             "DISPONIBLE": df.loc[filtro_ADTIVOS_SGP, "DISPONIBLE"].sum(),
@@ -537,8 +537,8 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_ADTIVOS_SGP, "RECURSOS SIN EJECUTAR"].sum()
         }
          
-        filtro_TOTAL_SGP_P8033 = (df["Codigo"].isin(["2-100-I002", "2-100-I001"]) 
-            & ultimos_dos.between(1, 86))
+        filtro_TOTAL_SGP_P8033 = (df["Codigo"].isin(["2-100-I002", "2-100-I001", "2-100-I026"]) 
+            & ultimos_cuatro.between(1001, 3086))
          
         TOTAL_SGP_P8033 = {
             "DISPONIBLE": df.loc[filtro_TOTAL_SGP_P8033, "DISPONIBLE"].sum(),
@@ -548,7 +548,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_TOTAL_SGP_P8033, "RECURSOS SIN EJECUTAR"].sum() 
         }
 
-        filtro_DOC_RP = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.between(1, 63)))
+        filtro_DOC_RP = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.between(1001, 3063)))
 
         DOC_RP = {
             "DISPONIBLE": df.loc[filtro_DOC_RP, "DISPONIBLE"].sum(),
@@ -558,7 +558,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_DOC_RP, "RECURSOS SIN EJECUTAR"].sum() 
         }
 
-        filtro_ADTIVOS_RP = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.between(65, 86)))
+        filtro_ADTIVOS_RP = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.between(3065, 3086)))
 
         ADTIVOS_RP = {
             "DISPONIBLE": df.loc[filtro_ADTIVOS_RP, "DISPONIBLE"].sum(),
@@ -568,7 +568,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_ADTIVOS_RP, "RECURSOS SIN EJECUTAR"].sum() 
         }
 
-        filtro_SENTENCIAS = ((df["Codigo"] == "1-100-F001") & (ultimos_dos == 64))
+        filtro_SENTENCIAS = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro == 3064))
 
         SENTENCIAS = {
             "DISPONIBLE": df.loc[filtro_SENTENCIAS, "DISPONIBLE"].sum(),
@@ -578,7 +578,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_SENTENCIAS, "RECURSOS SIN EJECUTAR"].sum() 
         }
 
-        filtro_TOTAL_RP_P8033 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.between(1, 86)))
+        filtro_TOTAL_RP_P8033 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.between(1001, 3086)))
 
         TOTAL_RP_P8033 = {
             "DISPONIBLE": df.loc[filtro_TOTAL_RP_P8033, "DISPONIBLE"].sum(),
@@ -588,8 +588,18 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_TOTAL_RP_P8033, "RECURSOS SIN EJECUTAR"].sum() 
         }
 
-        filtro_TOTAL_GENERAL = (df["Codigo"].isin(["2-100-I002", "2-100-I001","1-100-F001"]) 
-            & ultimos_dos.between(1, 86))
+        filtro_PENSIONADOS = ((df["Codigo"] == "2-100-I017") & (ultimos_cuatro == 3087))
+
+        PENSIONADOS = {
+            "DISPONIBLE": df.loc[filtro_PENSIONADOS, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_PENSIONADOS, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_PENSIONADOS, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_PENSIONADOS, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_PENSIONADOS, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_TOTAL_GENERAL = (df["Codigo"].isin(["2-100-I002", "2-100-I001","1-100-F001", "2-100-I026", "2-100-I017"]) 
+            & ultimos_cuatro.between(1001, 3087))
          
         TOTAL_GENERAL = {
             "DISPONIBLE": df.loc[filtro_TOTAL_GENERAL, "DISPONIBLE"].sum(),
@@ -605,12 +615,12 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
                 csf,                                    
                 FOMAG_SSF_Empleado, FOMAG_SSF_Patron, FOMAG_CSF, TOTAL_DOC_SGP,
                 ADTIVOS_SGP, TOTAL_SGP_P8033, DOC_RP, ADTIVOS_RP, SENTENCIAS,
-                TOTAL_RP_P8033, TOTAL_GENERAL                   
+                TOTAL_RP_P8033, PENSIONADOS, TOTAL_GENERAL                   
             ],
             index=[
                 "SGP CSF (Salarios + Parafiscales)", "FOMAG_SSF_Empleado", "FOMAG_SSF_Patron", 
                 "FOMAG_CSF", "TOTAL_DOC_SGP", "ADTIVOS_SGP", "TOTAL_SGP_P8033", "DOC_RP", "ADTIVOS_RP", "SENTENCIAS",
-                "TOTAL_RP_P8033", "TOTAL_GENERAL"
+                "TOTAL_RP_P8033", "PENSIONADOS", "TOTAL_GENERAL"
             ]
         )
 
@@ -638,8 +648,8 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
     
     try:        
         # 🔹 CALCULAR 'ultimos_dos' LOCALMENTE (IMPORTANTE)
-        ultimos_dos = pd.to_numeric(
-            df["Codigo_O"].astype(str).str[-2:], 
+        ultimos_cuatro = pd.to_numeric(
+            df["Codigo_O"].astype(str).str[-4:], 
             errors="coerce"
         )
         
@@ -649,7 +659,7 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
         # --- 🔹 1. DEFINIR FILTROS (CORREGIDO el error de sintaxis) ---
         filtro_SUELDO_BASICO = (
             (df["Codigo"] == "1-100-F001") & 
-            (ultimos_dos.isin([33, 34, 35, 20, 1, 2]))  # ¡CORREGIDO: isin() con paréntesis!
+            (ultimos_cuatro.isin([3033, 3034, 3035, 2020, 1001, 1002]))  # ¡CORREGIDO: isin() con paréntesis!
         )    
         
         SUELDO_BASICO = {
@@ -660,7 +670,7 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_SUELDO_BASICO, "RECURSOS SIN EJECUTAR"].sum()
         }
          
-        filtro_horas_extras = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([36, 21, 3])))
+        filtro_horas_extras = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3036, 2021, 1003])))
          
         HORAS_EXTRAS = {
             "DISPONIBLE": df.loc[filtro_horas_extras, "DISPONIBLE"].sum(),
@@ -670,7 +680,7 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_horas_extras, "RECURSOS SIN EJECUTAR"].sum()
         } 
         
-        filtro_prima_servicios = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([37, 22, 4])))
+        filtro_prima_servicios = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3037, 2022, 1004])))
          
         PRIMA_SERVICIOS = {
             "DISPONIBLE": df.loc[filtro_prima_servicios, "DISPONIBLE"].sum(),
@@ -680,7 +690,7 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_prima_servicios, "RECURSOS SIN EJECUTAR"].sum()
         }
          
-        filtro_prima_vacaciones = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([38, 23, 5])))
+        filtro_prima_vacaciones = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3038, 2023, 1005])))
          
         PRIMA_VACACIONES = {
             "DISPONIBLE": df.loc[filtro_prima_vacaciones, "DISPONIBLE"].sum(),
@@ -690,7 +700,7 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_prima_vacaciones, "RECURSOS SIN EJECUTAR"].sum()
         }
          
-        filtro_prima_navidad = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([39, 24, 6])))
+        filtro_prima_navidad = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3039, 2024, 1006])))
          
         PRIMA_NAVIDAD = {
             "DISPONIBLE": df.loc[filtro_prima_navidad, "DISPONIBLE"].sum(),
@@ -700,7 +710,7 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_prima_navidad, "RECURSOS SIN EJECUTAR"].sum()
         }
          
-        filtro_sub_alimentacion = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([40, 7])))
+        filtro_sub_alimentacion = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3040, 1007])))
          
         SUB_ALIMENTACION = {
             "DISPONIBLE": df.loc[filtro_sub_alimentacion, "DISPONIBLE"].sum(),
@@ -710,7 +720,7 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_sub_alimentacion, "RECURSOS SIN EJECUTAR"].sum()
         }
          
-        filtro_aux_transporte = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([41, 8])))
+        filtro_aux_transporte = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3041, 1008])))
          
         AUX_TRANSPORTE = {
             "DISPONIBLE": df.loc[filtro_aux_transporte, "DISPONIBLE"].sum(),
@@ -720,7 +730,14 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_aux_transporte, "RECURSOS SIN EJECUTAR"].sum() 
         }
 
-        filtro_SUELDOS = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([1, 2, 3, 4, 5, 6, 7, 8, 20, 21, 22, 23, 24, 33, 34, 35, 36, 37, 38, 39, 40, 41])))
+        filtro_SUELDOS = (
+        (df["Codigo"] == "1-100-F001") &
+        (
+        ultimos_cuatro.between(1001, 1008) |
+        ultimos_cuatro.between(2020, 2024) |
+        ultimos_cuatro.between(3033, 3041)
+        )
+         )
 
         SUELDOS = {
             "DISPONIBLE": df.loc[filtro_SUELDOS, "DISPONIBLE"].sum(),
@@ -730,7 +747,7 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_SUELDOS, "RECURSOS SIN EJECUTAR"].sum() 
         }
 
-        filtro_compensar = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([42, 43, 25, 9])))
+        filtro_compensar = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3042, 3043, 2025, 1009])))
 
         COMPENSAR = {
             "DISPONIBLE": df.loc[filtro_compensar, "DISPONIBLE"].sum(),
@@ -740,7 +757,7 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_compensar, "RECURSOS SIN EJECUTAR"].sum() 
         }
 
-        filtro_icbf = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([44, 45, 26, 10])))
+        filtro_icbf = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3044, 3045, 2026, 1010])))
 
         ICBF = {
             "DISPONIBLE": df.loc[filtro_icbf, "DISPONIBLE"].sum(),
@@ -750,7 +767,7 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_icbf, "RECURSOS SIN EJECUTAR"].sum() 
         }
 
-        filtro_escuelas_tecnicas = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([46, 47, 27, 11])))
+        filtro_escuelas_tecnicas = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3046, 3047, 2027, 1011])))
 
         ESCUELAS_TECNICAS = {
             "DISPONIBLE": df.loc[filtro_escuelas_tecnicas, "DISPONIBLE"].sum(),
@@ -760,7 +777,7 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_escuelas_tecnicas, "RECURSOS SIN EJECUTAR"].sum() 
         }
 
-        filtro_sena = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([48, 49, 28, 12])))
+        filtro_sena = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3048, 3049, 2028, 1012])))
 
         SENA = {
             "DISPONIBLE": df.loc[filtro_sena, "DISPONIBLE"].sum(),
@@ -770,7 +787,7 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_sena, "RECURSOS SIN EJECUTAR"].sum() 
         }
 
-        filtro_esap = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([50, 51, 29, 13])))
+        filtro_esap = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3050, 3051, 2029, 1013])))
 
         ESAP = {
             "DISPONIBLE": df.loc[filtro_esap, "DISPONIBLE"].sum(),
@@ -781,9 +798,9 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
         }
 
         filtro_parafiscales = ((df["Codigo"] == "1-100-F001") & 
-            (ultimos_dos.between(42, 51) |
-             ultimos_dos.between(25, 29) |
-             ultimos_dos.between(9, 13)))
+            (ultimos_cuatro.between(3042, 3051) |
+             ultimos_cuatro.between(2025, 2029) |
+             ultimos_cuatro.between(1009, 1013)))
 
         PARAFISCALES = {
             "DISPONIBLE": df.loc[filtro_parafiscales, "DISPONIBLE"].sum(),
@@ -793,7 +810,7 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_parafiscales, "RECURSOS SIN EJECUTAR"].sum() 
         }
 
-        filtro_salud = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([52, 53, 30, 14])))
+        filtro_salud = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3052, 3053, 2030, 1014])))
 
         SALUD = {
             "DISPONIBLE": df.loc[filtro_salud, "DISPONIBLE"].sum(),
@@ -803,7 +820,7 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_salud, "RECURSOS SIN EJECUTAR"].sum() 
         }
 
-        filtro_pension = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([54, 55, 31, 15])))
+        filtro_pension = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3054, 3055, 2031, 1015])))
 
         PENSION = {
             "DISPONIBLE": df.loc[filtro_pension, "DISPONIBLE"].sum(),
@@ -813,7 +830,7 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_pension, "RECURSOS SIN EJECUTAR"].sum() 
         }
 
-        filtro_cesantias = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([56, 57, 32, 16])))
+        filtro_cesantias = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3056, 3057, 2032, 1016])))
 
         CESANTIAS = {
             "DISPONIBLE": df.loc[filtro_cesantias, "DISPONIBLE"].sum(),
@@ -824,9 +841,9 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
         }
 
         filtro_fomag = ((df["Codigo"] == "1-100-F001") & 
-            (ultimos_dos.between(52, 57) |
-             ultimos_dos.between(30, 32) |
-             ultimos_dos.between(14, 16)))
+            (ultimos_cuatro.between(3052, 3057) |
+             ultimos_cuatro.between(2030, 2032) |
+             ultimos_cuatro.between(1014, 1016)))
 
         FOMAG = {
             "DISPONIBLE": df.loc[filtro_fomag, "DISPONIBLE"].sum(),
@@ -837,7 +854,7 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
         }
 
         filtro_total_doc_rp = ((df["Codigo"] == "1-100-F001") & 
-            (ultimos_dos.between(1, 57)))
+            (ultimos_cuatro.between(1001, 3057)))
 
         TOTAL_DOC_RP = {
             "DISPONIBLE": df.loc[filtro_total_doc_rp, "DISPONIBLE"].sum(),
@@ -915,8 +932,8 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
     
     try:        
         # 🔹 CALCULAR 'ultimos_dos' LOCALMENTE (IMPORTANTE)
-        ultimos_dos = pd.to_numeric(
-            df["Codigo_O"].astype(str).str[-2:], 
+        ultimos_cuatro = pd.to_numeric(
+            df["Codigo_O"].astype(str).str[-4:], 
             errors="coerce"
         )
         
@@ -926,7 +943,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
         # --- 🔹 1. DEFINIR FILTROS 
         filtro_O2301172201202401690307101001 = (
             (df["Codigo"] == "1-100-F001") & 
-            (ultimos_dos.isin([1])) 
+            (ultimos_cuatro.isin([1001])) 
         )    
         
         O2301172201202401690307101001 = {
@@ -939,7 +956,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307101001, "RECURSOS SIN EJECUTAR"].sum()
         }
          
-        filtro_O2301172201202401690307101002 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([2])))
+        filtro_O2301172201202401690307101002 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1002])))
          
         O2301172201202401690307101002 = {
             "NOMBRE": "Pago de Ascensos en escalafon del Personal",
@@ -951,7 +968,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307101002, "RECURSOS SIN EJECUTAR"].sum()
         } 
         
-        filtro_O2301172201202401690307101003 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([3])))
+        filtro_O2301172201202401690307101003 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1003])))
          
         O2301172201202401690307101003 = {
             "NOMBRE": "Pago de horas extras del personal docente",
@@ -963,7 +980,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307101003, "RECURSOS SIN EJECUTAR"].sum()
         }
         
-        filtro_O2301172201202401690307101004 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([4])))
+        filtro_O2301172201202401690307101004 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1004])))
          
         O2301172201202401690307101004 = {
             "NOMBRE": "Pago de Personal Docente prima de servicio",
@@ -975,7 +992,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307101004, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307101005 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([5])))
+        filtro_O2301172201202401690307101005 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1005])))
          
         O2301172201202401690307101005 = {
             "NOMBRE": "Pago de Personal Docente prima de vacaciones",
@@ -987,7 +1004,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307101005, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307101006 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([6])))
+        filtro_O2301172201202401690307101006 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1006])))
          
         O2301172201202401690307101006 = {
             "NOMBRE": "Pago de Personal Docente prima de navidad",
@@ -999,7 +1016,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307101006, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307101007 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([7])))
+        filtro_O2301172201202401690307101007 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1007])))
          
         O2301172201202401690307101007 = {
             "NOMBRE": "Pago de Personal Docente subsidio de alimentacion",
@@ -1011,7 +1028,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307101007, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307101008 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([8])))
+        filtro_O2301172201202401690307101008 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1008])))
          
         O2301172201202401690307101008 = {
             "NOMBRE": "Pago Auxili de transporte personal docente",
@@ -1023,7 +1040,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307101008, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_sueldos = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([1, 2, 3, 4, 5, 6, 7, 8])))
+        filtro_sueldos = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008])))
          
         SUELDOS = {
             "NOMBRE": "---",
@@ -1035,7 +1052,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_sueldos, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307101009 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([9])))
+        filtro_O2301172201202401690307101009 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1009])))
          
         O2301172201202401690307101009 = {
             "NOMBRE": "Pago de Aportes para las Cajas de Compen",
@@ -1047,7 +1064,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307101009, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307101010 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([10])))
+        filtro_O2301172201202401690307101010 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1010])))
          
         O2301172201202401690307101010 = {
             "NOMBRE": "Pago de Aportes para el ICBF personal docente",
@@ -1059,7 +1076,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307101010, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307101011 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([11])))
+        filtro_O2301172201202401690307101011 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1011])))
          
         O2301172201202401690307101011 = {
             "NOMBRE": "Pago de Aportes para Institutos Tecnicos",
@@ -1071,7 +1088,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307101011, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307101012 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([12])))
+        filtro_O2301172201202401690307101012 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1012])))
          
         O2301172201202401690307101012 = {
             "NOMBRE": "Pago de Aportes para el SENA personal docentes",
@@ -1083,7 +1100,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307101012, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307101013 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([13])))
+        filtro_O2301172201202401690307101013 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1013])))
          
         O2301172201202401690307101013 = {
             "NOMBRE": "Pago de Aportes para la ESAP personal docente",
@@ -1095,7 +1112,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307101013, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_parafiscales = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([9, 10, 11, 12, 13])))
+        filtro_parafiscales = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1009, 1010, 1011, 1012, 1013])))
          
         PARAFISCALES = {
             "NOMBRE": "---",
@@ -1107,7 +1124,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_parafiscales, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307101014 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([14])))
+        filtro_O2301172201202401690307101014 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1014])))
          
         O2301172201202401690307101014 = {
             "NOMBRE": "Pago de Aportes para Salud del personal",
@@ -1119,7 +1136,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307101014, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307101015 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([15])))
+        filtro_O2301172201202401690307101015 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1015])))
          
         O2301172201202401690307101015 = {
             "NOMBRE": "Pago de Aportes para Pension del persona",
@@ -1131,7 +1148,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307101015, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307101016 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([16])))
+        filtro_O2301172201202401690307101016 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1016])))
          
         O2301172201202401690307101016 = {
             "NOMBRE": "Pago de Aportes para Cesantias del personal",
@@ -1142,7 +1159,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
             "SALDO DE APROPIACION": df.loc[filtro_O2301172201202401690307101016, "SALDO DE APROPIACION"].sum(),
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307101016, "RECURSOS SIN EJECUTAR"].sum()
         }
-        filtro_fomag = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([14, 15, 16])))
+        filtro_fomag = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([1014, 1015, 1016])))
          
         FOMAG = {
             "NOMBRE": "---",
@@ -1155,7 +1172,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
         }
 
         filtro_total_primera_infancia = ((df["Codigo"] == "1-100-F001") & 
-            (ultimos_dos.between(1, 16)))
+            (ultimos_cuatro.between(1001, 1016)))
          
         TOTAL_PRIMERA_INFANCIA = {
             "NOMBRE": "---",
@@ -1213,8 +1230,8 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
     
     try:        
         # 🔹 CALCULAR 'ultimos_dos' LOCALMENTE (IMPORTANTE)
-        ultimos_dos = pd.to_numeric(
-            df["Codigo_O"].astype(str).str[-2:], 
+        ultimos_cuatro = pd.to_numeric(
+            df["Codigo_O"].astype(str).str[-4:], 
             errors="coerce"
         )
         
@@ -1224,7 +1241,7 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
         # --- 🔹 1. DEFINIR FILTROS 
         filtro_O2301172201202401690307102020 = (
             (df["Codigo"] == "1-100-F001") & 
-            (ultimos_dos.isin([20])) 
+            (ultimos_cuatro.isin([2020])) 
         )    
         
         O2301172201202401690307102020 = {
@@ -1237,7 +1254,7 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307102020, "RECURSOS SIN EJECUTAR"].sum()
         }
          
-        filtro_O2301172201202401690307102021 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([21])))
+        filtro_O2301172201202401690307102021 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([2021])))
          
         O2301172201202401690307102021 = {
             "NOMBRE": "Pago de horas extras del personal docent",
@@ -1249,7 +1266,7 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307102021, "RECURSOS SIN EJECUTAR"].sum()
         } 
         
-        filtro_O2301172201202401690307102022 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([22])))
+        filtro_O2301172201202401690307102022 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([2022])))
          
         O2301172201202401690307102022 = {
             "NOMBRE": "Pago de Personal Docente prima de servicio",
@@ -1261,7 +1278,7 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307102022, "RECURSOS SIN EJECUTAR"].sum()
         }
         
-        filtro_O2301172201202401690307102023 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([23])))
+        filtro_O2301172201202401690307102023 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([2023])))
          
         O2301172201202401690307102023 = {
             "NOMBRE": "Pago de Personal Docente prima de vacaciones",
@@ -1273,7 +1290,7 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307102023, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307102024 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([24])))
+        filtro_O2301172201202401690307102024 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([2024])))
          
         O2301172201202401690307102024 = {
             "NOMBRE": "Pago de Personal Docente prima de navidad",
@@ -1285,7 +1302,7 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307102024, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_sueldos_or = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([20, 21, 22, 23, 24])))
+        filtro_sueldos_or = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([2020, 2021, 2022, 2023, 2024])))
          
         SUELDOS_ORIENTADORES = {
             "NOMBRE": "---",
@@ -1297,7 +1314,7 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_sueldos_or, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307102025 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([25])))
+        filtro_O2301172201202401690307102025 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([2025])))
          
         O2301172201202401690307102025 = {
             "NOMBRE": "Pago de Aportes para las Cajas de Compensacion",
@@ -1309,7 +1326,7 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307102025, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307102026 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([26])))
+        filtro_O2301172201202401690307102026 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([2026])))
          
         O2301172201202401690307102026 = {
             "NOMBRE": "Pago de Aportes para el ICBF personal docente",
@@ -1321,7 +1338,7 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307102026, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307102027 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([27])))
+        filtro_O2301172201202401690307102027 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([2027])))
          
         O2301172201202401690307102027 = {
             "NOMBRE": "Pago de Aportes para Institutos Tecnicos",
@@ -1333,7 +1350,7 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307102027, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307102028 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([28])))
+        filtro_O2301172201202401690307102028 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([2028])))
          
         O2301172201202401690307102028 = {
             "NOMBRE": "Pago de Aportes para el SENA personal docente",
@@ -1345,7 +1362,7 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307102028, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307102029 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([29])))
+        filtro_O2301172201202401690307102029 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([2029])))
          
         O2301172201202401690307102029 = {
             "NOMBRE": "Pago de Aportes para la ESAP personal docente",
@@ -1357,7 +1374,7 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307102029, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_parafiscales_or = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([25, 26, 27, 28, 29])))
+        filtro_parafiscales_or = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([2025, 2026, 2027, 2028, 2029])))
          
         PARAFISCALES_ORIENTADORES = {
             "NOMBRE": "---",
@@ -1369,7 +1386,7 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_parafiscales_or, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307102030 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([30])))
+        filtro_O2301172201202401690307102030 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([2030])))
          
         O2301172201202401690307102030 = {
             "NOMBRE": "Pago de Aportes para Salud del personal",
@@ -1381,7 +1398,7 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307102030, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307102031 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([31])))
+        filtro_O2301172201202401690307102031 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([2031])))
          
         O2301172201202401690307102031 = {
             "NOMBRE": "Pago de Aportes para Pension del personal",
@@ -1393,7 +1410,7 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307102031, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307102032 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([32])))
+        filtro_O2301172201202401690307102032 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([2032])))
          
         O2301172201202401690307102032 = {
             "NOMBRE": "Pago de Aportes para Cesantias del personal",
@@ -1405,7 +1422,7 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307102032, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_fomag_or = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([30, 31, 32])))
+        filtro_fomag_or = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([2030, 2031, 2032])))
          
         FOMAG_ORIENTADORES = {
             "NOMBRE": "---",
@@ -1417,7 +1434,7 @@ def procesar_datos_RP_orientadores(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_fomag_or, "RECURSOS SIN EJECUTAR"].sum()
         }
         filtro_TOTAL_DOC_ORIENTADORES = ((df["Codigo"] == "1-100-F001") & 
-            (ultimos_dos.between(20, 32)))
+            (ultimos_cuatro.between(2020, 2032)))
          
         TOTAL_DOC_ORIENTADORES = {
             "NOMBRE": "---",
@@ -1475,8 +1492,8 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
     
     try:        
         # 🔹 CALCULAR 'ultimos_dos' LOCALMENTE (IMPORTANTE)
-        ultimos_dos = pd.to_numeric(
-            df["Codigo_O"].astype(str).str[-2:], 
+        ultimos_cuatro = pd.to_numeric(
+            df["Codigo_O"].astype(str).str[-4:], 
             errors="coerce"
         )
         
@@ -1486,7 +1503,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
         # --- 🔹 1. DEFINIR FILTROS 
         filtro_O2301172201202401690307103033 = (
             (df["Codigo"] == "1-100-F001") & 
-            (ultimos_dos.isin([33])) 
+            (ultimos_cuatro.isin([3033])) 
         )    
         
         O2301172201202401690307103033 = {
@@ -1499,7 +1516,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103033, "RECURSOS SIN EJECUTAR"].sum()
         }
          
-        filtro_O2301172201202401690307103034 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([34])))
+        filtro_O2301172201202401690307103034 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3034])))
          
         O2301172201202401690307103034 = {
             "NOMBRE": "Pago de Personal Directivo Docente",
@@ -1511,7 +1528,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103034, "RECURSOS SIN EJECUTAR"].sum()
         } 
         
-        filtro_O2301172201202401690307103035 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([35])))
+        filtro_O2301172201202401690307103035 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3035])))
          
         O2301172201202401690307103035 = {
             "NOMBRE": "Pago de Ascensos en escalafon del Personal",
@@ -1523,7 +1540,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103035, "RECURSOS SIN EJECUTAR"].sum()
         }
         
-        filtro_O2301172201202401690307103036 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([36])))
+        filtro_O2301172201202401690307103036 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3036])))
          
         O2301172201202401690307103036 = {
             "NOMBRE": "Pago de horas extras del personal docent",
@@ -1535,7 +1552,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103036, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307103037 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([37])))
+        filtro_O2301172201202401690307103037 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3037])))
          
         O2301172201202401690307103037 = {
             "NOMBRE": "Pago de Personal Docente- prima de servicio",
@@ -1547,7 +1564,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103037, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307103038 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([38])))
+        filtro_O2301172201202401690307103038 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3038])))
          
         O2301172201202401690307103038 = {
             "NOMBRE": "Pago de Personal Docente - prima de vacaciones",
@@ -1559,7 +1576,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103038, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307103039 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([39])))
+        filtro_O2301172201202401690307103039 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3039])))
          
         O2301172201202401690307103039 = {
             "NOMBRE": "Pago de Personal Docente - prima de navidad",
@@ -1571,7 +1588,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103039, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307103040 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([40])))
+        filtro_O2301172201202401690307103040 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3040])))
          
         O2301172201202401690307103040 = {
             "NOMBRE": "Pago de Personal Docente- subsidio de alimentación",
@@ -1583,7 +1600,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103040, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307103041 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([41])))
+        filtro_O2301172201202401690307103041 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3041])))
          
         O2301172201202401690307103041 = {
             "NOMBRE": "Pago Auxili de transporte personal docente",
@@ -1595,7 +1612,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103041, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_sueldos_gl = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.between(33, 41)))
+        filtro_sueldos_gl = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.between(3033, 3041)))
          
         SUELDOS_PBM = {
             "NOMBRE": "---",
@@ -1607,7 +1624,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_sueldos_gl, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307103042 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([42])))
+        filtro_O2301172201202401690307103042 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3042])))
          
         O2301172201202401690307103042 = {
             "NOMBRE": "Pago de Aportes para las Cajas de Compension",
@@ -1619,7 +1636,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103042, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307103043 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([43])))
+        filtro_O2301172201202401690307103043 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3043])))
          
         O2301172201202401690307103043 = {
             "NOMBRE": "Pago de Aportes para las Cajas de Compensacion",
@@ -1631,7 +1648,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103043, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307103044 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([44])))
+        filtro_O2301172201202401690307103044 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3044])))
          
         O2301172201202401690307103044 = {
             "NOMBRE": "Pago de Aportes para el ICBF personal do",
@@ -1643,7 +1660,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103044, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307103045 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([45])))
+        filtro_O2301172201202401690307103045 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3045])))
          
         O2301172201202401690307103045 = {
             "NOMBRE": "Pago de Aportes para el ICBF del Personal",
@@ -1655,7 +1672,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103045, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307103046 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([46])))
+        filtro_O2301172201202401690307103046 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3046])))
          
         O2301172201202401690307103046 = {
             "NOMBRE": "Pago de Aportes para Institutos Tecnicos",
@@ -1667,7 +1684,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103046, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307103047 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([47])))
+        filtro_O2301172201202401690307103047 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3047])))
          
         O2301172201202401690307103047 = {
             "NOMBRE": "Pago de Aportes para Institutos Tecnicos",
@@ -1679,7 +1696,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103047, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307103048 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([48])))
+        filtro_O2301172201202401690307103048 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3048])))
          
         O2301172201202401690307103048 = {
             "NOMBRE": "Pago de Aportes para el SENA del Personal",
@@ -1691,7 +1708,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103048, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307103049 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([49])))
+        filtro_O2301172201202401690307103049 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3049])))
          
         O2301172201202401690307103049 = {
             "NOMBRE": "Pago de Aportes para el SENA del Personal",
@@ -1702,7 +1719,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "SALDO DE APROPIACION": df.loc[filtro_O2301172201202401690307103049, "SALDO DE APROPIACION"].sum(),
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103049, "RECURSOS SIN EJECUTAR"].sum()
         }
-        filtro_O2301172201202401690307103050 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([50])))
+        filtro_O2301172201202401690307103050 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3050])))
          
         O2301172201202401690307103050 = {
             "NOMBRE": "Pago de Aportes para la ESAP personal docente",
@@ -1713,7 +1730,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "SALDO DE APROPIACION": df.loc[filtro_O2301172201202401690307103050, "SALDO DE APROPIACION"].sum(),
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103050, "RECURSOS SIN EJECUTAR"].sum()
         }
-        filtro_O2301172201202401690307103051 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([51])))
+        filtro_O2301172201202401690307103051 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3051])))
          
         O2301172201202401690307103051 = {
             "NOMBRE": "Pago de Aportes para la ESAP personal docente",
@@ -1725,7 +1742,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103051, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_PARAFISCALES_PBM = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.between(42, 51)))
+        filtro_PARAFISCALES_PBM = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.between(3042, 3051)))
          
         PARAFISCALES_PBM = {
             "NOMBRE": "---",
@@ -1737,7 +1754,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_PARAFISCALES_PBM, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_O2301172201202401690307103052 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([52])))
+        filtro_O2301172201202401690307103052 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3052])))
          
         O2301172201202401690307103052 = {
             "NOMBRE": "Pago de Aportes para Salud del personal",
@@ -1748,7 +1765,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "SALDO DE APROPIACION": df.loc[filtro_O2301172201202401690307103052, "SALDO DE APROPIACION"].sum(),
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103052, "RECURSOS SIN EJECUTAR"].sum()
         }
-        filtro_O2301172201202401690307103053 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([53])))
+        filtro_O2301172201202401690307103053 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3053])))
          
         O2301172201202401690307103053 = {
             "NOMBRE": "Pago de Aportes para salud del personal",
@@ -1759,7 +1776,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "SALDO DE APROPIACION": df.loc[filtro_O2301172201202401690307103053, "SALDO DE APROPIACION"].sum(),
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103053, "RECURSOS SIN EJECUTAR"].sum()
         }
-        filtro_O2301172201202401690307103054 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([54])))
+        filtro_O2301172201202401690307103054 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3054])))
          
         O2301172201202401690307103054 = {
             "NOMBRE": "Pago de Aportes para Pension del personal",
@@ -1770,7 +1787,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "SALDO DE APROPIACION": df.loc[filtro_O2301172201202401690307103054, "SALDO DE APROPIACION"].sum(),
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103054, "RECURSOS SIN EJECUTAR"].sum()
         }
-        filtro_O2301172201202401690307103055 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([55])))
+        filtro_O2301172201202401690307103055 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3055])))
          
         O2301172201202401690307103055 = {
             "NOMBRE": "Pago de Aportes para Pension del personal",
@@ -1781,7 +1798,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "SALDO DE APROPIACION": df.loc[filtro_O2301172201202401690307103055, "SALDO DE APROPIACION"].sum(),
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103055, "RECURSOS SIN EJECUTAR"].sum()
         }
-        filtro_O2301172201202401690307103056 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([56])))
+        filtro_O2301172201202401690307103056 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3056])))
          
         O2301172201202401690307103056 = {
             "NOMBRE": "Pago de Aportes para Cesantias del personal",
@@ -1792,7 +1809,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "SALDO DE APROPIACION": df.loc[filtro_O2301172201202401690307103056, "SALDO DE APROPIACION"].sum(),
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103056, "RECURSOS SIN EJECUTAR"].sum()
         }
-        filtro_O2301172201202401690307103057 = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.isin([57])))
+        filtro_O2301172201202401690307103057 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.isin([3057])))
          
         O2301172201202401690307103057 = {
             "NOMBRE": "Pago de Aportes para Cesantias del personal",
@@ -1804,7 +1821,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_O2301172201202401690307103057, "RECURSOS SIN EJECUTAR"].sum()
         }
 
-        filtro_FOMAG_PBM = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.between(52, 57)))
+        filtro_FOMAG_PBM = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.between(3052, 3057)))
          
         FOMAG_PBM = {
             "NOMBRE": "---",
@@ -1815,7 +1832,7 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
             "SALDO DE APROPIACION": df.loc[filtro_FOMAG_PBM, "SALDO DE APROPIACION"].sum(),
             "RECURSOS SIN EJECUTAR": df.loc[filtro_FOMAG_PBM, "RECURSOS SIN EJECUTAR"].sum()
         }
-        filtro_TOTAL_DOC_PBM = ((df["Codigo"] == "1-100-F001") & (ultimos_dos.between(33, 57)))
+        filtro_TOTAL_DOC_PBM = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.between(3033, 3057)))
          
         TOTAL_DOC_PBM = {
             "NOMBRE": "---",
@@ -2098,7 +2115,7 @@ def mostrar_tabla_RP_orientadores(resumen):
             )
 
     st.markdown(
-        "<div class='titulo-tabla'>📊 EJECUCIÓN PRESUPUESTAL DOCENTES PRIMERA INFANCIA RP</div>",
+        "<div class='titulo-tabla'>📊 EJECUCIÓN PRESUPUESTAL DOCENTES ORIENTADORES RP</div>",
         unsafe_allow_html=True
     )
 
@@ -2173,7 +2190,7 @@ def mostrar_tabla_RP_PBM(resumen):
             )
 
     st.markdown(
-        "<div class='titulo-tabla'>📊 EJECUCIÓN PRESUPUESTAL DOCENTES PRIMERA INFANCIA RP</div>",
+        "<div class='titulo-tabla'>📊 EJECUCIÓN PRESUPUESTAL DOCENTES PRIMARIA BASICA MEDIA RP</div>",
         unsafe_allow_html=True
     )
 
