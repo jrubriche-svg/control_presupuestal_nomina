@@ -471,14 +471,14 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
         st.session_state.df_backup = df.copy()
         
         # --- 🔹 1. SGP CSF (Salarios + Parafiscales) ---
-        filtro_csf = (
-            (df["Codigo"] == "2-100-I002") & 
+        filtro_csf = (df["Codigo"].isin(["2-100-I002", "1-204-I012"]) & 
             (ultimos_cuatro.between(1001, 1013) |
              ultimos_cuatro.between(2020, 2031) |
              ultimos_cuatro.between(3033, 3051))
         )    
         
         csf = {
+            "INICIAL": df.loc[filtro_csf, "INICIAL"].sum(),
             "DISPONIBLE": df.loc[filtro_csf, "DISPONIBLE"].sum(),
             "RP EMITIDOS": df.loc[filtro_csf, "RP EMITIDOS"].sum(),
             "GIROS ACUMULADOS": df.loc[filtro_csf, "GIROS ACUMULADOS"].sum(),
@@ -489,6 +489,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
         filtro_FOMAG_SSF_Empleado = (df["Codigo"].isin(["2-100-I002", "2-100-I001"]) & (ultimos_cuatro.isin([1017, 3058, 3059])))
          
         FOMAG_SSF_Empleado = {
+            "INICIAL": df.loc[filtro_FOMAG_SSF_Empleado, "INICIAL"].sum(),
             "DISPONIBLE": df.loc[filtro_FOMAG_SSF_Empleado, "DISPONIBLE"].sum(),
             "RP EMITIDOS": df.loc[filtro_FOMAG_SSF_Empleado, "RP EMITIDOS"].sum(),
             "GIROS ACUMULADOS": df.loc[filtro_FOMAG_SSF_Empleado, "GIROS ACUMULADOS"].sum(),
@@ -499,6 +500,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
         filtro_FOMAG_SSF_Patron = ((df["Codigo"] == "2-100-I001") & (ultimos_cuatro.isin([1018,1019, 3060, 3061, 3062, 3063])))
          
         FOMAG_SSF_Patron = {
+            "INICIAL": df.loc[filtro_FOMAG_SSF_Patron, "INICIAL"].sum(),
             "DISPONIBLE": df.loc[filtro_FOMAG_SSF_Patron, "DISPONIBLE"].sum(),
             "RP EMITIDOS": df.loc[filtro_FOMAG_SSF_Patron, "RP EMITIDOS"].sum(),
             "GIROS ACUMULADOS": df.loc[filtro_FOMAG_SSF_Patron, "GIROS ACUMULADOS"].sum(),
@@ -509,6 +511,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
         filtro_FOMAG_CSF = ((df["Codigo"] == "2-100-I002") & (ultimos_cuatro.isin([3052, 3054])))
          
         FOMAG_CSF = {
+            "INICIAL": df.loc[filtro_FOMAG_CSF, "INICIAL"].sum(),
             "DISPONIBLE": df.loc[filtro_FOMAG_CSF, "DISPONIBLE"].sum(),
             "RP EMITIDOS": df.loc[filtro_FOMAG_CSF, "RP EMITIDOS"].sum(),
             "GIROS ACUMULADOS": df.loc[filtro_FOMAG_CSF, "GIROS ACUMULADOS"].sum(),
@@ -516,10 +519,11 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_FOMAG_CSF, "RECURSOS SIN EJECUTAR"].sum()
         }
          
-        filtro_TOTAL_DOC_SGP = (df["Codigo"].isin(["2-100-I002", "2-100-I001"]) 
+        filtro_TOTAL_DOC_SGP = (df["Codigo"].isin(["2-100-I002", "2-100-I001", "1-204-I012"]) 
             & ultimos_cuatro.between(1001, 3063))
          
         TOTAL_DOC_SGP = {
+            "INICIAL": df.loc[filtro_TOTAL_DOC_SGP, "INICIAL"].sum(),
             "DISPONIBLE": df.loc[filtro_TOTAL_DOC_SGP, "DISPONIBLE"].sum(),
             "RP EMITIDOS": df.loc[filtro_TOTAL_DOC_SGP, "RP EMITIDOS"].sum(),
             "GIROS ACUMULADOS": df.loc[filtro_TOTAL_DOC_SGP, "GIROS ACUMULADOS"].sum(),
@@ -530,6 +534,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
         filtro_ADTIVOS_SGP = (df["Codigo"].isin(["2-100-I002", "2-100-I026"]) & (ultimos_cuatro.isin([3065, 3066, 3067, 3068, 3069, 3070, 3071, 3072, 3073, 3074, 3075, 3076, 3077, 3078, 3079, 3080, 3081, 3082, 3083, 3084, 3085, 3086])))
          
         ADTIVOS_SGP = {
+            "INICIAL": df.loc[filtro_ADTIVOS_SGP, "DISPONIBLE"].sum(),
             "DISPONIBLE": df.loc[filtro_ADTIVOS_SGP, "DISPONIBLE"].sum(),
             "RP EMITIDOS": df.loc[filtro_ADTIVOS_SGP, "RP EMITIDOS"].sum(),
             "GIROS ACUMULADOS": df.loc[filtro_ADTIVOS_SGP, "GIROS ACUMULADOS"].sum(),
@@ -537,10 +542,11 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_ADTIVOS_SGP, "RECURSOS SIN EJECUTAR"].sum()
         }
          
-        filtro_TOTAL_SGP_P8033 = (df["Codigo"].isin(["2-100-I002", "2-100-I001", "2-100-I026"]) 
+        filtro_TOTAL_SGP_P8033 = (df["Codigo"].isin(["2-100-I002", "2-100-I001", "2-100-I026", "1-204-I012"]) 
             & ultimos_cuatro.between(1001, 3086))
          
         TOTAL_SGP_P8033 = {
+            "INICIAL": df.loc[filtro_TOTAL_SGP_P8033, "INICIAL"].sum(),
             "DISPONIBLE": df.loc[filtro_TOTAL_SGP_P8033, "DISPONIBLE"].sum(),
             "RP EMITIDOS": df.loc[filtro_TOTAL_SGP_P8033, "RP EMITIDOS"].sum(),
             "GIROS ACUMULADOS": df.loc[filtro_TOTAL_SGP_P8033, "GIROS ACUMULADOS"].sum(),
@@ -551,6 +557,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
         filtro_DOC_RP = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.between(1001, 3063)))
 
         DOC_RP = {
+            "INICIAL": df.loc[filtro_DOC_RP, "INICIAL"].sum(),
             "DISPONIBLE": df.loc[filtro_DOC_RP, "DISPONIBLE"].sum(),
             "RP EMITIDOS": df.loc[filtro_DOC_RP, "RP EMITIDOS"].sum(),
             "GIROS ACUMULADOS": df.loc[filtro_DOC_RP, "GIROS ACUMULADOS"].sum(),
@@ -561,6 +568,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
         filtro_ADTIVOS_RP = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.between(3065, 3086)))
 
         ADTIVOS_RP = {
+            "INICIAL": df.loc[filtro_ADTIVOS_RP, "INICIAL"].sum(),
             "DISPONIBLE": df.loc[filtro_ADTIVOS_RP, "DISPONIBLE"].sum(),
             "RP EMITIDOS": df.loc[filtro_ADTIVOS_RP, "RP EMITIDOS"].sum(),
             "GIROS ACUMULADOS": df.loc[filtro_ADTIVOS_RP, "GIROS ACUMULADOS"].sum(),
@@ -571,6 +579,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
         filtro_SENTENCIAS = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro == 3064))
 
         SENTENCIAS = {
+            "INICIAL": df.loc[filtro_SENTENCIAS, "INICIAL"].sum(),
             "DISPONIBLE": df.loc[filtro_SENTENCIAS, "DISPONIBLE"].sum(),
             "RP EMITIDOS": df.loc[filtro_SENTENCIAS, "RP EMITIDOS"].sum(),
             "GIROS ACUMULADOS": df.loc[filtro_SENTENCIAS, "GIROS ACUMULADOS"].sum(),
@@ -581,6 +590,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
         filtro_TOTAL_RP_P8033 = ((df["Codigo"] == "1-100-F001") & (ultimos_cuatro.between(1001, 3086)))
 
         TOTAL_RP_P8033 = {
+            "INICIAL": df.loc[filtro_TOTAL_RP_P8033, "INICIAL"].sum(),
             "DISPONIBLE": df.loc[filtro_TOTAL_RP_P8033, "DISPONIBLE"].sum(),
             "RP EMITIDOS": df.loc[filtro_TOTAL_RP_P8033, "RP EMITIDOS"].sum(),
             "GIROS ACUMULADOS": df.loc[filtro_TOTAL_RP_P8033, "GIROS ACUMULADOS"].sum(),
@@ -591,6 +601,7 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
         filtro_PENSIONADOS = ((df["Codigo"] == "2-100-I017") & (ultimos_cuatro == 3087))
 
         PENSIONADOS = {
+            "INICIAL": df.loc[filtro_PENSIONADOS, "INICIAL"].sum(),
             "DISPONIBLE": df.loc[filtro_PENSIONADOS, "DISPONIBLE"].sum(),
             "RP EMITIDOS": df.loc[filtro_PENSIONADOS, "RP EMITIDOS"].sum(),
             "GIROS ACUMULADOS": df.loc[filtro_PENSIONADOS, "GIROS ACUMULADOS"].sum(),
@@ -598,10 +609,11 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_PENSIONADOS, "RECURSOS SIN EJECUTAR"].sum() 
         }
 
-        filtro_TOTAL_GENERAL = (df["Codigo"].isin(["2-100-I002", "2-100-I001","1-100-F001", "2-100-I026", "2-100-I017"]) 
+        filtro_TOTAL_GENERAL = (df["Codigo"].isin(["2-100-I002", "2-100-I001","1-100-F001", "2-100-I026", "2-100-I017", "1-204-I012"]) 
             & ultimos_cuatro.between(1001, 3087))
          
         TOTAL_GENERAL = {
+            "INICIAL": df.loc[filtro_TOTAL_GENERAL, "INICIAL"].sum(),
             "DISPONIBLE": df.loc[filtro_TOTAL_GENERAL, "DISPONIBLE"].sum(),
             "RP EMITIDOS": df.loc[filtro_TOTAL_GENERAL, "RP EMITIDOS"].sum(),
             "GIROS ACUMULADOS": df.loc[filtro_TOTAL_GENERAL, "GIROS ACUMULADOS"].sum(),
@@ -1912,6 +1924,7 @@ def mostrar_tabla_sgp(resumen):
 <thead>
 <tr>
 <th>BOLSILLOS</th>
+<th>INICIAL</th>
 <th>DISPONIBLE</th>
 <th>RP EMITIDOS</th>
 <th>GIROS ACUMULADOS</th>
@@ -1933,6 +1946,7 @@ def mostrar_tabla_sgp(resumen):
         html_tabla += f"""
 <tr class="{clase_fila}">
 <td class="encabezado-fila">{idx}</td>
+<td class="numero">{row['INICIAL']}</td>
 <td class="numero">{row['DISPONIBLE']}</td>
 <td class="numero">{row['RP EMITIDOS']}</td>
 <td class="numero">{row['GIROS ACUMULADOS']}</td>
@@ -2650,3 +2664,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
