@@ -486,15 +486,15 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
             "RECURSOS SIN EJECUTAR": df.loc[filtro_csf, "RECURSOS SIN EJECUTAR"].sum()
         }
          
-        filtro_FOMAG_SSF_Empleado = (df["Codigo"].isin(["2-100-I002", "2-100-I001"]) & (ultimos_cuatro.isin([1017, 3058, 3059])))
+        filtro_FOMAG_Empleado = (df["Codigo"].isin(["2-100-I002", "2-100-I001"]) & (ultimos_cuatro.isin([1017, 3058, 3059])))
          
-        FOMAG_SSF_Empleado = {
-            "INICIAL": df.loc[filtro_FOMAG_SSF_Empleado, "INICIAL"].sum(),
-            "DISPONIBLE": df.loc[filtro_FOMAG_SSF_Empleado, "DISPONIBLE"].sum(),
-            "RP EMITIDOS": df.loc[filtro_FOMAG_SSF_Empleado, "RP EMITIDOS"].sum(),
-            "GIROS ACUMULADOS": df.loc[filtro_FOMAG_SSF_Empleado, "GIROS ACUMULADOS"].sum(),
-            "SALDO DE APROPIACION": df.loc[filtro_FOMAG_SSF_Empleado, "SALDO DE APROPIACION"].sum(),
-            "RECURSOS SIN EJECUTAR": df.loc[filtro_FOMAG_SSF_Empleado, "RECURSOS SIN EJECUTAR"].sum()
+        FOMAG_Empleado = {
+            "INICIAL": df.loc[filtro_FOMAG_Empleado, "INICIAL"].sum(),
+            "DISPONIBLE": df.loc[filtro_FOMAG_Empleado, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_FOMAG_Empleado, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_FOMAG_Empleado, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_FOMAG_Empleado, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_FOMAG_Empleado, "RECURSOS SIN EJECUTAR"].sum()
         } 
         
         filtro_FOMAG_SSF_Patron = ((df["Codigo"] == "2-100-I001") & (ultimos_cuatro.isin([1018,1019, 3060, 3061, 3062, 3063])))
@@ -625,12 +625,12 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
         resumen_principal = pd.DataFrame(
             [
                 csf,                                    
-                FOMAG_SSF_Empleado, FOMAG_SSF_Patron, FOMAG_CSF, TOTAL_DOC_SGP,
+                FOMAG_Empleado, FOMAG_SSF_Patron, FOMAG_CSF, TOTAL_DOC_SGP,
                 ADTIVOS_SGP, TOTAL_SGP_P8033, DOC_RP, ADTIVOS_RP, SENTENCIAS,
                 TOTAL_RP_P8033, PENSIONADOS, TOTAL_GENERAL                   
             ],
             index=[
-                "SGP CSF (Salarios + Parafiscales)", "FOMAG_SSF_Empleado", "FOMAG_SSF_Patron", 
+                "SGP CSF (Salarios + Parafiscales)", "FOMAG_Empleado", "FOMAG_SSF_Patron", 
                 "FOMAG_CSF", "TOTAL_DOC_SGP", "ADTIVOS_SGP", "TOTAL_SGP_P8033", "DOC_RP", "ADTIVOS_RP", "SENTENCIAS",
                 "TOTAL_RP_P8033", "PENSIONADOS", "TOTAL_GENERAL"
             ]
@@ -659,7 +659,7 @@ def procesar_datos_RP_principal(fuerza_actualizacion=False):
         return None, None
     
     try:        
-        # 🔹 CALCULAR 'ultimos_dos' LOCALMENTE (IMPORTANTE)
+        # 🔹 CALCULAR 'ultimos_cuatro' LOCALMENTE (IMPORTANTE)
         ultimos_cuatro = pd.to_numeric(
             df["Codigo_O"].astype(str).str[-4:], 
             errors="coerce"
@@ -1896,6 +1896,362 @@ def procesar_datos_RP_primaria_basica_media(fuerza_actualizacion=False):
         st.error(f"Detalle: {traceback.format_exc()}")
         return None, None
 
+# =============================================================================
+# FUNCIÓN DE PROCESAMIENTO DOCENTES SGP PRINCIPAL 
+# =============================================================================
+def procesar_datos_SGP_principal(fuerza_actualizacion=False):
+    """Función específica para procesar datos de SGP"""
+    # Cargar datos
+    df = cargar_datos_originales(_fuerza_actualizacion=fuerza_actualizacion)
+    
+    if df is None:
+        return None, None
+    
+    try:        
+        # 🔹 CALCULAR 'ultimos_cuatro' LOCALMENTE (IMPORTANTE)
+        ultimos_cuatro = pd.to_numeric(
+            df["Codigo_O"].astype(str).str[-4:], 
+            errors="coerce"
+        )
+        
+        # 🔹 GUARDAR BACKUP EN SESSION STATE
+        st.session_state.df_backup = df.copy()
+        
+        # --- 🔹 1. DEFINIR FILTROS (CORREGIDO el error de sintaxis) ---
+        filtro_SUELDO_BASICO = (
+            (df["Codigo"] == "2-100-I002") & 
+            (ultimos_cuatro.isin([3033, 3034, 3035, 1001, 1002]))  # ¡CORREGIDO: isin() con paréntesis!
+        )    
+        
+        SUELDO_BASICO = {
+            "DISPONIBLE": df.loc[filtro_SUELDO_BASICO, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_SUELDO_BASICO, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_SUELDO_BASICO, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_SUELDO_BASICO, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_SUELDO_BASICO, "RECURSOS SIN EJECUTAR"].sum()
+        }
+         
+        filtro_horas_extras = ((df["Codigo"] == "2-100-I002") & (ultimos_cuatro.isin([3036, 1003])))
+         
+        HORAS_EXTRAS = {
+            "DISPONIBLE": df.loc[filtro_horas_extras, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_horas_extras, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_horas_extras, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_horas_extras, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_horas_extras, "RECURSOS SIN EJECUTAR"].sum()
+        } 
+        
+        filtro_prima_servicios = ((df["Codigo"] == "2-100-I002") & (ultimos_cuatro.isin([3037, 1004])))
+         
+        PRIMA_SERVICIOS = {
+            "DISPONIBLE": df.loc[filtro_prima_servicios, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_prima_servicios, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_prima_servicios, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_prima_servicios, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_prima_servicios, "RECURSOS SIN EJECUTAR"].sum()
+        }
+         
+        filtro_prima_vacaciones = ((df["Codigo"] == "2-100-I002") & (ultimos_cuatro.isin([3038, 1005])))
+         
+        PRIMA_VACACIONES = {
+            "DISPONIBLE": df.loc[filtro_prima_vacaciones, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_prima_vacaciones, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_prima_vacaciones, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_prima_vacaciones, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_prima_vacaciones, "RECURSOS SIN EJECUTAR"].sum()
+        }
+         
+        filtro_prima_navidad = ((df["Codigo"] == "2-100-I002") & (ultimos_cuatro.isin([3039, 1006])))
+         
+        PRIMA_NAVIDAD = {
+            "DISPONIBLE": df.loc[filtro_prima_navidad, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_prima_navidad, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_prima_navidad, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_prima_navidad, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_prima_navidad, "RECURSOS SIN EJECUTAR"].sum()
+        }
+         
+        filtro_sub_alimentacion = ((df["Codigo"] == "2-100-I002") & (ultimos_cuatro.isin([3040, 1007])))
+         
+        SUB_ALIMENTACION = {
+            "DISPONIBLE": df.loc[filtro_sub_alimentacion, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_sub_alimentacion, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_sub_alimentacion, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_sub_alimentacion, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_sub_alimentacion, "RECURSOS SIN EJECUTAR"].sum()
+        }
+         
+        filtro_aux_transporte = ((df["Codigo"] == "2-100-I002") & (ultimos_cuatro.isin([3041, 1008])))
+         
+        AUX_TRANSPORTE = {
+            "DISPONIBLE": df.loc[filtro_aux_transporte, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_aux_transporte, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_aux_transporte, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_aux_transporte, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_aux_transporte, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_SUELDOS = (
+        (df["Codigo"] == "2-100-I002") &
+        (
+        ultimos_cuatro.between(1001, 1008) |
+        ultimos_cuatro.between(3033, 3041)
+        )
+         )
+
+        SUELDOS = {
+            "DISPONIBLE": df.loc[filtro_SUELDOS, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_SUELDOS, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_SUELDOS, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_SUELDOS, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_SUELDOS, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_compensar = ((df["Codigo"] == "2-100-I002") & (ultimos_cuatro.isin([3042, 3043, 1009])))
+
+        COMPENSAR = {
+            "DISPONIBLE": df.loc[filtro_compensar, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_compensar, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_compensar, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_compensar, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_compensar, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_icbf = ((df["Codigo"] == "2-100-I002") & (ultimos_cuatro.isin([3044, 3045, 1010])))
+
+        ICBF = {
+            "DISPONIBLE": df.loc[filtro_icbf, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_icbf, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_icbf, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_icbf, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_icbf, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_escuelas_tecnicas = ((df["Codigo"] == "2-100-I002") & (ultimos_cuatro.isin([3046, 3047, 1011])))
+
+        ESCUELAS_TECNICAS = {
+            "DISPONIBLE": df.loc[filtro_escuelas_tecnicas, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_escuelas_tecnicas, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_escuelas_tecnicas, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_escuelas_tecnicas, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_escuelas_tecnicas, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_sena = ((df["Codigo"] == "2-100-I002") & (ultimos_cuatro.isin([3048, 3049, 1012])))
+
+        SENA = {
+            "DISPONIBLE": df.loc[filtro_sena, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_sena, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_sena, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_sena, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_sena, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_esap = ((df["Codigo"] == "2-100-I002") & (ultimos_cuatro.isin([3050, 3051, 1013])))
+
+        ESAP = {
+            "DISPONIBLE": df.loc[filtro_esap, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_esap, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_esap, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_esap, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_esap, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_parafiscales = ((df["Codigo"] == "2-100-I002") & 
+            (ultimos_cuatro.between(3042, 3051) 
+              |
+             ultimos_cuatro.between(1009, 1013)))
+
+        PARAFISCALES = {
+            "DISPONIBLE": df.loc[filtro_parafiscales, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_parafiscales, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_parafiscales, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_parafiscales, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_parafiscales, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_fomag_SSF_empleado = ((df["Codigo"] == "2-100-I001") & (ultimos_cuatro.isin([1017, 3058, 3059 ])))
+
+        FOMAG_SSF_EMPLEADO = {
+            "DISPONIBLE": df.loc[filtro_fomag_SSF_empleado, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_fomag_SSF_empleado, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_fomag_SSF_empleado, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_fomag_SSF_empleado, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_fomag_SSF_empleado, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_salud_SSF = ((df["Codigo"] == "2-100-I001") & (ultimos_cuatro.isin([1018, 1014, 3052, 3053, 3060, 3061])))
+
+        SALUD_SSF = {
+            "DISPONIBLE": df.loc[filtro_salud_SSF, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_salud_SSF, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_salud_SSF, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_salud_SSF, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_salud_SSF, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_pension_ssf = ((df["Codigo"] == "2-100-I001") & (ultimos_cuatro.isin([1015, 3054, 3055])))
+
+        PENSION_SSF = {
+            "DISPONIBLE": df.loc[filtro_pension_ssf, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_pension_ssf, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_pension_ssf, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_pension_ssf, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_pension_ssf, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_cesantias_ssf = ((df["Codigo"] == "2-100-I001") & (ultimos_cuatro.isin([1019, 1016, 3056, 3057, 3062, 3063])))
+
+        CESANTIAS_SSF = {
+            "DISPONIBLE": df.loc[filtro_cesantias_ssf, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_cesantias_ssf, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_cesantias_ssf, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_cesantias_ssf, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_cesantias_ssf, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_fomag_ssf = ((df["Codigo"] == "2-100-I001") & 
+            (ultimos_cuatro.between(3052, 3063)  |
+             ultimos_cuatro.between(1014, 1019)))
+
+        FOMAG_ssf = {
+            "DISPONIBLE": df.loc[filtro_fomag_ssf, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_fomag_ssf, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_fomag_ssf, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_fomag_ssf, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_fomag_ssf, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_fomag_CSF_empleado = ((df["Codigo"] == "2-100-I002") & (ultimos_cuatro.isin([1017, 3058, 3059 ])))
+
+        FOMAG_CSF_EMPLEADO = {
+            "DISPONIBLE": df.loc[filtro_fomag_CSF_empleado, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_fomag_CSF_empleado, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_fomag_CSF_empleado, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_fomag_CSF_empleado, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_fomag_CSF_empleado, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_salud_CSF = ((df["Codigo"].isin(["2-100-I002", "1-200-I038"])) & (ultimos_cuatro.isin([1018, 1014, 3052, 3053, 3060, 3061])))
+
+        SALUD_CSF = {
+            "DISPONIBLE": df.loc[filtro_salud_CSF, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_salud_CSF, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_salud_CSF, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_salud_CSF, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_salud_CSF, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_pension_csf = ((df["Codigo"].isin(["2-100-I002", "1-200-I038"])) & (ultimos_cuatro.isin([1015, 3054, 3055])))
+
+        PENSION_CSF = {
+            "DISPONIBLE": df.loc[filtro_pension_csf, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_pension_csf, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_pension_csf, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_pension_csf, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_pension_csf, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_cesantias_csf = ((df["Codigo"].isin(["2-100-I002", "1-200-I038"])) & (ultimos_cuatro.isin([1016, 1019, 3056, 3057, 3062, 3063])))
+
+        CESANTIAS_CSF = {
+            "DISPONIBLE": df.loc[filtro_cesantias_csf, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_cesantias_csf, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_cesantias_csf, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_cesantias_csf, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_cesantias_csf, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_fomag_csf = ((df["Codigo"].isin(["2-100-I002", "1-200-I038"])) & 
+            (ultimos_cuatro.between(3052, 3063)  |
+             ultimos_cuatro.between(1014, 1019)))
+
+        FOMAG_csf = {
+            "DISPONIBLE": df.loc[filtro_fomag_csf, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_fomag_csf, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_fomag_csf, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_fomag_csf, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_fomag_csf, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_total_doc_sgp = ((df["Codigo"].isin(["2-100-I002", "1-200-I038", "2-100-I001"])) & (ultimos_cuatro.between(1001, 3063)))
+
+        TOTAL_DOC_SGP = {
+            "DISPONIBLE": df.loc[filtro_total_doc_sgp, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_total_doc_sgp, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_total_doc_sgp, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_total_doc_sgp, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_total_doc_sgp, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        # --- 🔹 Crear tabla resumen ---
+        resumen_principal = pd.DataFrame(
+            [
+                SUELDO_BASICO, 
+                HORAS_EXTRAS, 
+                PRIMA_SERVICIOS, 
+                PRIMA_VACACIONES, 
+                PRIMA_NAVIDAD, 
+                SUB_ALIMENTACION, 
+                AUX_TRANSPORTE,
+                SUELDOS,
+                COMPENSAR,
+                ICBF,
+                ESCUELAS_TECNICAS,
+                SENA,
+                ESAP,
+                PARAFISCALES,
+                FOMAG_SSF_EMPLEADO,
+                SALUD_SSF,
+                PENSION_SSF,
+                CESANTIAS_SSF,
+                FOMAG_ssf,
+                FOMAG_CSF_EMPLEADO,
+                SALUD_CSF,
+                PENSION_CSF,
+                CESANTIAS_CSF,
+                FOMAG_csf, 
+                TOTAL_DOC_SGP
+            ],
+            index=[
+                "SUELDO_BASICO", 
+                "HORAS_EXTRAS", 
+                "PRIMA_SERVICIOS", 
+                "PRIMA_VACACIONES", 
+                "PRIMA_NAVIDAD", 
+                "SUB_ALIMENTACION", 
+                "AUX_TRANSPORTE",
+                "SUELDOS",
+                "COMPENSAR",
+                "ICBF",
+                "ESCUELAS_TECNICAS",
+                "SENA",
+                "ESAP",
+                "PARAFISCALES",
+                "FOMAG_SSF_EMPLEADO",
+                "SALUD_SSF",
+                "PENSION_SSF",
+                "CESANTIAS_SSF",
+                "FOMAG_ssf",
+                "FOMAG_CSF_EMPLEADO",
+                "SALUD_CSF",
+                "PENSION_CSF",
+                "CESANTIAS_CSF",
+                "FOMAG_csf", 
+                "TOTAL_DOC_SGP"
+            ]
+        )
+
+        resumen = resumen_principal.copy()
+        
+        return df, resumen
+         
+    except Exception as e:
+        st.error(f"❌ Error en procesar_datos_RP_principal: {str(e)}")
+        import traceback
+        st.error(f"Detalle: {traceback.format_exc()}")
+        return None, None
+
 
 # =============================================================================
 # FUNCIONES DE VISUALIZACIÓN
@@ -2244,6 +2600,69 @@ def mostrar_tabla_RP_PBM(resumen):
 <td class="numero">{row.get('GIROS ACUMULADOS', '$0')}</td>
 <td class="numero">{row.get('SALDO DE APROPIACION', '$0')}</td>
 <td class="numero">{row.get('RECURSOS SIN EJECUTAR', '$0')}</td>
+</tr>
+"""
+
+    html_tabla += """
+</tbody>
+</table>
+</div>
+"""
+
+    st.markdown(html_tabla, unsafe_allow_html=True)
+
+# =============================================================================
+# FUNCIÓN DE VISUALIZACIÓN DOCENTES SGP PRINCIPAL 
+# =============================================================================
+
+def mostrar_tabla_SGPP_principal(resumen):
+    if resumen is None or resumen.empty:
+        st.warning("No hay datos para mostrar")
+        return
+
+    resumen_formateado = resumen.copy()
+    for col in resumen_formateado.columns:
+        resumen_formateado[col] = resumen_formateado[col].apply(
+            lambda x: f"${x:,.0f}".replace(",", ".")
+            if pd.notnull(x) and isinstance(x, (int, float)) else "$0"
+        )
+
+    st.markdown(
+        "<div class='titulo-tabla'>📊 TABLA RESUMEN EJECUCIÓN PRESUPUESTAL DOCENTES SGP</div>",
+        unsafe_allow_html=True
+    )
+
+    html_tabla = """
+<div class="tabla-container">
+<table class="tabla-personalizada">
+<thead>
+<tr>
+<th>OBJETO</th>
+<th>DISPONIBLE</th>
+<th>RP EMITIDOS</th>
+<th>GIROS ACUMULADOS</th>
+<th>SALDO DE APROPIACION</th>
+<th>RECURSOS SIN EJECUTAR</th>
+</tr>
+</thead>
+<tbody>
+"""
+    filas_totales = {
+        "SUELDOS": "fila-total", 
+        "PARAFISCALES": "fila-total-final",
+        "FOMAG_ssf": "fila-total-general","FOMAG_csf":"fila-total", "TOTAL_DOC_SGP":"fila-total"     
+    }
+
+    for idx, row in resumen_formateado.iterrows():
+        clase_fila = filas_totales.get(idx, "")
+        html_tabla += f"""
+<tr class="{clase_fila}">
+<td class="encabezado-fila">{idx}</td>
+<td class="numero">{row['DISPONIBLE']}</td>
+<td class="numero">{row['RP EMITIDOS']}</td>
+<td class="numero">{row['GIROS ACUMULADOS']}</td>
+<td class="numero">{row['SALDO DE APROPIACION']}</td>
+<td class="numero">{row['RECURSOS SIN EJECUTAR']}</td>
 </tr>
 """
 
@@ -2628,18 +3047,58 @@ def mostrar_pantalla_sgp():
     if st.button("← Volver al Inicio", key="volver_sgp"):
         st.session_state.pagina_actual = "INICIO"
         st.rerun()
-    
+
     st.markdown("<div class='contenedor-logos'>", unsafe_allow_html=True)
+
     col1, col2, col3 = st.columns([1, 2, 1])
+
     with col1:
         st.image("logo_bogota.png", width=150, use_container_width=True)
+
     with col2:
-        st.markdown("<div class='header'><h2>SISTEMA GENERAL DE PARTICIPACIONES</h2></div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='header'><h2>SISTEMA GENERAL DE PARTICIPACIONES</h2></div>",
+            unsafe_allow_html=True
+        )
+
     with col3:
         st.image("logo_alcaldía_mayor.png", width=150, use_container_width=True)
+
     st.markdown("</div>", unsafe_allow_html=True)
-    
-    st.info("🚧 Módulo en construcción - Próximamente análisis detallado de SGP")
+
+    # Botón actualizar datos
+    if st.button("🔄 Actualizar datos SGP", key="actualizar_sgp_principal"):
+        st.cache_data.clear()
+        st.rerun()
+
+    # IMPORTANTE:
+    # Aquí debes llamar TU función correcta
+    df, resumen = procesar_datos_SGP_principal(
+        fuerza_actualizacion=False
+    )
+
+    if resumen is not None and not resumen.empty:
+
+        # IMPORTANTE:
+        # Aquí llamas TU tabla personalizada HTML
+        mostrar_tabla_SGPP_principal(resumen)
+
+        # Exportar Excel
+        archivo_excel = exportar_a_excel_formateado(
+            [resumen],
+            nombres_hojas=["DOCENTES_SGP"],
+            tipos_tablas=["SGP"]
+        )
+
+        st.download_button(
+            label="📥 Descargar Excel DOCENTES SGP",
+            data=archivo_excel,
+            file_name="DOCENTES_SGP.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+    else:
+        st.warning("No se encontraron datos para DOCENTES SGP")
 
 # =============================================================================
 # MAIN
