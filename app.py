@@ -374,9 +374,32 @@ def cargar_estilos():
         </style>
     """, unsafe_allow_html=True)
 
+def mostrar_fecha_actualizacion():
+    """Muestra la fecha de actualización de los datos en un formato estilizado"""
+    fecha = st.session_state.get('fecha_actualizacion', 'No disponible')
+    st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-left: 5px solid #2E7D32;
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin: 10px 0 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        ">
+            <span style="font-size: 22px;">📅</span>
+            <div>
+                <span style="font-weight: 600; color: #1B5E20; font-size: 15px;">Última actualización:</span>
+                <span style="color: #2E7D32; font-size: 15px; margin-left: 6px;">{fecha}</span>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 # =============================================================================
 # CARGAR DATOS DESDE GOOGLE SHEETS - VERSIÓN PRODUCCIÓN
 # =============================================================================
+
 @st.cache_data(ttl=30, show_spinner="📥 Sincronizando con Google Sheets...")
 def cargar_datos_originales(_fuerza_actualizacion=False):
     """
@@ -390,7 +413,6 @@ def cargar_datos_originales(_fuerza_actualizacion=False):
         # URL DE TU GOOGLE SHEETS
         BASE_URL = "https://docs.google.com/spreadsheets/d/1MK6NNx5YEqo_19xdSwpXg_WRYd52GPTpFPeVMYeZCNo/export?format=csv&gid=0"
 
-        
         # Estrategia: Si es forzado, agregamos timestamp único
         if _fuerza_actualizacion:
             timestamp = int(time.time() * 1000)
@@ -406,6 +428,53 @@ def cargar_datos_originales(_fuerza_actualizacion=False):
         if df.empty:
             st.warning("⚠️ La hoja está vacía o no es accesible")
             return None
+        
+        # 🔹 EXTRAER FECHA DE ACTUALIZACIÓN - CORREGIDO
+        if "FECHA" in df.columns:
+            # 🔹 PASO 1: Forzar el formato correcto de fecha
+            # Si la fecha viene como "4/07/2026" (día/mes/año)
+            # Usamos dayfirst=True para que pandas lo interprete correctamente
+            
+            try:
+                # Intento 1: Formato día/mes/año (DD/MM/YYYY)
+                df["FECHA"] = pd.to_datetime(df["FECHA"], format="%d/%m/%Y", errors="coerce")
+            except:
+                try:
+                    # Intento 2: Formato día/mes/año con día de 2 dígitos (04/07/2026)
+                    df["FECHA"] = pd.to_datetime(df["FECHA"], format="%d/%m/%Y", errors="coerce")
+                except:
+                    try:
+                        # Intento 3: Formato día/mes/año con horas (04/07/2026 14:30)
+                        df["FECHA"] = pd.to_datetime(df["FECHA"], format="%d/%m/%Y %H:%M", errors="coerce")
+                    except:
+                        try:
+                            # Intento 4: Formato día/mes/año con horas y minutos (04/07/2026 14:30:00)
+                            df["FECHA"] = pd.to_datetime(df["FECHA"], format="%d/%m/%Y %H:%M:%S", errors="coerce")
+                        except:
+                            # Intento 5: Dejar que pandas intente adivinar automáticamente
+                            # pero especificando dayfirst=True
+                            df["FECHA"] = pd.to_datetime(df["FECHA"], dayfirst=True, errors="coerce")
+            
+            # 🔹 PASO 2: Obtener la fecha más reciente
+            fecha_reciente = df["FECHA"].max()
+            
+            if pd.notna(fecha_reciente):
+                # 🔹 PASO 3: Guardar en session state con formato en letras
+                # Opción 1: Solo fecha (ej: "04 de Julio de 2026")
+                st.session_state.fecha_actualizacion = fecha_reciente.strftime("%d de %B de %Y")
+                
+                # Opción 2: Con día de semana (ej: "Lunes 04 de Julio de 2026")
+                # st.session_state.fecha_actualizacion = fecha_reciente.strftime("%A %d de %B de %Y")
+                
+                # Opción 3: Con hora (ej: "04 de Julio de 2026 a las 02:30 PM")
+                # st.session_state.fecha_actualizacion = fecha_reciente.strftime("%d de %B de %Y a las %I:%M %p")
+                
+                # 🔹 Para depuración: Mostrar en consola la fecha correcta
+                print(f"✅ Fecha correcta: {st.session_state.fecha_actualizacion}")
+            else:
+                st.session_state.fecha_actualizacion = "No disponible"
+        else:
+            st.session_state.fecha_actualizacion = "Columna FECHA no encontrada"
         
         # DETECTOR DE CAMBIOS INTELIGENTE
         contenido_actual = df.to_csv(index=False).encode('utf-8')
@@ -435,6 +504,8 @@ def cargar_datos_originales(_fuerza_actualizacion=False):
         if not _fuerza_actualizacion:
             hora_actual = datetime.now().strftime("%H:%M:%S")
             st.sidebar.caption(f"Última sync: {hora_actual}")
+            # 🔹 Mostrar fecha en letras en la barra lateral
+            st.sidebar.caption(f"📅 {st.session_state.get('fecha_actualizacion', 'Desconocida')}")
         
         return df
         
@@ -1140,7 +1211,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
          
         O2301172201202401690307101014 = {
             "NOMBRE": "Pago de Aportes para Salud del personal",
-            "CONCEPTO": "Pago de Aportes para Salud del personal",
+            "CONCEPTO": "O231010200201 Pago de Aportes para Salud del personal",
             "DISPONIBLE": df.loc[filtro_O2301172201202401690307101014, "DISPONIBLE"].sum(),
             "RP EMITIDOS": df.loc[filtro_O2301172201202401690307101014, "RP EMITIDOS"].sum(),
             "GIROS ACUMULADOS": df.loc[filtro_O2301172201202401690307101014, "GIROS ACUMULADOS"].sum(),
@@ -1152,7 +1223,7 @@ def procesar_datos_RP_primera_infancia(fuerza_actualizacion=False):
          
         O2301172201202401690307101015 = {
             "NOMBRE": "Pago de Aportes para Pension del persona",
-            "CONCEPTO": "Pago de Aportes para Pension del persona",
+            "CONCEPTO": "O231010200101 Pago de Aportes para Pension del persona",
             "DISPONIBLE": df.loc[filtro_O2301172201202401690307101015, "DISPONIBLE"].sum(),
             "RP EMITIDOS": df.loc[filtro_O2301172201202401690307101015, "RP EMITIDOS"].sum(),
             "GIROS ACUMULADOS": df.loc[filtro_O2301172201202401690307101015, "GIROS ACUMULADOS"].sum(),
@@ -2252,6 +2323,819 @@ def procesar_datos_SGP_principal(fuerza_actualizacion=False):
         st.error(f"Detalle: {traceback.format_exc()}")
         return None, None
 
+# =============================================================================
+# FUNCIÓN DE PROCESAMIENTO SGP PRIMERA INFANCIA - DETALLADA (con NOMBRE y CONCEPTO)
+# =============================================================================
+
+def procesar_datos_SGP_primera_infancia_detallada(fuerza_actualizacion=False):
+    """Función específica para procesar datos de SGP - Primera Infancia (códigos 1001-1019) con detalle"""
+    df = cargar_datos_originales(_fuerza_actualizacion=fuerza_actualizacion)
+    
+    if df is None:
+        return None, None
+    
+    try:        
+        ultimos_cuatro = pd.to_numeric(
+            df["Codigo_O"].astype(str).str[-4:], 
+            errors="coerce"
+        )
+        
+        st.session_state.df_backup = df.copy()
+        
+        # --- 🔹 DEFINIR FILTROS INDIVIDUALES PARA PRIMERA INFANCIA ---
+        
+        # SUELDOS (1001-1008)
+        filtro_1001 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 1001)
+        O2301172201202401690307101001 = {
+            "NOMBRE": "Pago de Personal Docente primera infancia",
+            "CONCEPTO": "O231010100101 Sueldo basico",
+            "DISPONIBLE": df.loc[filtro_1001, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1001, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1001, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1001, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1001, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_1002 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 1002)
+        O2301172201202401690307101002 = {
+            "NOMBRE": "Pago de Ascensos en escalafon del Personal",
+            "CONCEPTO": "O231010100101 Sueldo basico",
+            "DISPONIBLE": df.loc[filtro_1002, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1002, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1002, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1002, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1002, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_1003 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 1003)
+        O2301172201202401690307101003 = {
+            "NOMBRE": "Pago de horas extras del personal docente",
+            "CONCEPTO": "O231010100102 Horas extras, dominicales, festivos y recargos",
+            "DISPONIBLE": df.loc[filtro_1003, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1003, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1003, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1003, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1003, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_1004 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 1004)
+        O2301172201202401690307101004 = {
+            "NOMBRE": "Pago de Personal Docente prima de servicio",
+            "CONCEPTO": "O231010100106 Prima de servicio",
+            "DISPONIBLE": df.loc[filtro_1004, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1004, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1004, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1004, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1004, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_1005 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 1005)
+        O2301172201202401690307101005 = {
+            "NOMBRE": "Pago de Personal Docente prima de vacaciones",
+            "CONCEPTO": "O23101010010802 Prima de vacaciones",
+            "DISPONIBLE": df.loc[filtro_1005, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1005, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1005, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1005, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1005, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_1006 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 1006)
+        O2301172201202401690307101006 = {
+            "NOMBRE": "Pago de Personal Docente prima de navidad",
+            "CONCEPTO": "O23101010010801 Prima de navidad",
+            "DISPONIBLE": df.loc[filtro_1006, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1006, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1006, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1006, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1006, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_1007 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 1007)
+        O2301172201202401690307101007 = {
+            "NOMBRE": "Pago de Personal Docente subsidio de alimentacion",
+            "CONCEPTO": "O231010100104 Subsidio de alimentacion",
+            "DISPONIBLE": df.loc[filtro_1007, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1007, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1007, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1007, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1007, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_1008 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 1008)
+        O2301172201202401690307101008 = {
+            "NOMBRE": "Pago Auxili de transporte personal docente",
+            "CONCEPTO": "O231010100105 Auxilio de Transporte",
+            "DISPONIBLE": df.loc[filtro_1008, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1008, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1008, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1008, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1008, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        # Total SUELDOS (1001-1008)
+        filtro_sueldos = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro.between(1001, 1008))
+        SUELDOS = {
+            "NOMBRE": "---",
+            "CONCEPTO": "---",
+            "DISPONIBLE": df.loc[filtro_sueldos, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_sueldos, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_sueldos, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_sueldos, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_sueldos, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        # PARAFISCALES (1009-1013)
+        filtro_1009 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 1009)
+        O2301172201202401690307101009 = {
+            "NOMBRE": "Pago de Aportes para las Cajas de Compensacion",
+            "CONCEPTO": "O231010200401 Compensar",
+            "DISPONIBLE": df.loc[filtro_1009, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1009, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1009, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1009, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1009, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_1010 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 1010)
+        O2301172201202401690307101010 = {
+            "NOMBRE": "Pago de Aportes para el ICBF personal docente",
+            "CONCEPTO": "O2310102006 Aportes al ICBF",
+            "DISPONIBLE": df.loc[filtro_1010, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1010, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1010, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1010, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1010, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_1011 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 1011)
+        O2301172201202401690307101011 = {
+            "NOMBRE": "Pago de Aportes para Institutos Tecnicos",
+            "CONCEPTO": "O2310102009 Aportes a escuelas industriales e institutos tecnicos",
+            "DISPONIBLE": df.loc[filtro_1011, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1011, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1011, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1011, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1011, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_1012 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 1012)
+        O2301172201202401690307101012 = {
+            "NOMBRE": "Pago de Aportes para el SENA personal docente",
+            "CONCEPTO": "O2310102007 Aportes al SENA",
+            "DISPONIBLE": df.loc[filtro_1012, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1012, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1012, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1012, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1012, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_1013 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 1013)
+        O2301172201202401690307101013 = {
+            "NOMBRE": "Pago de Aportes para la ESAP personal docente",
+            "CONCEPTO": "O2310102008 Aportes a la ESAP",
+            "DISPONIBLE": df.loc[filtro_1013, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1013, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1013, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1013, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1013, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        # Total PARAFISCALES (1009-1013)
+        filtro_parafiscales = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro.between(1009, 1013))
+        PARAFISCALES = {
+            "NOMBRE": "---",
+            "CONCEPTO": "---",
+            "DISPONIBLE": df.loc[filtro_parafiscales, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_parafiscales, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_parafiscales, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_parafiscales, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_parafiscales, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        # FOMAG (1014-1019)
+        filtro_1014 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 1014)
+        O2301172201202401690307101014 = {
+            "NOMBRE": "Pago de Aportes para Salud del personal",
+            "CONCEPTO": "O231010200201 Aportes a la seguridad social en salud publica",
+            "DISPONIBLE": df.loc[filtro_1014, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1014, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1014, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1014, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1014, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_1015 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 1015)
+        O2301172201202401690307101015 = {
+            "NOMBRE": "Pago de Aportes para Pension del personal",
+            "CONCEPTO": "O231010200101 Aportes a la seguridad social en pensiones publicas",
+            "DISPONIBLE": df.loc[filtro_1015, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1015, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1015, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1015, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1015, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_1016 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 1016)
+        O2301172201202401690307101016 = {
+            "NOMBRE": "Pago de Aportes para Cesantias del personal",
+            "CONCEPTO": "O231010200301 Aportes de cesantias a fondos publicos",
+            "DISPONIBLE": df.loc[filtro_1016, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1016, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1016, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1016, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1016, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        # Total FOMAG CSF (1014-1016)
+        filtro_fomag_csf = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro.between(1014, 1016))
+        FOMAG_CSF = {
+            "NOMBRE": "---",
+            "CONCEPTO": "---",
+            "DISPONIBLE": df.loc[filtro_fomag_csf, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_fomag_csf, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_fomag_csf, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_fomag_csf, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_fomag_csf, "RECURSOS SIN EJECUTAR"].sum()
+            }
+        # FOMAG_Empleado_ssf (1017)
+        filtro_1017 = (df["Codigo"].isin(["2-100-I002", "2-100-I001"])) & (ultimos_cuatro == 1017)
+        O2301172201202401690307101017 = {
+            "NOMBRE": "Pago de Personal Docente SSF primera inf",
+            "CONCEPTO": "O231010100101 Sueldo basico",
+            "DISPONIBLE": df.loc[filtro_1017, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1017, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1017, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1017, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1017, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        # FOMAG_SSF_Patron (1018)
+        filtro_1018 = (df["Codigo"] == "2-100-I001") & (ultimos_cuatro == 1018)
+        O2301172201202401690307101018 = {
+            "NOMBRE": "Pago de Aportes para salud del personal",
+            "CONCEPTO": "O231010200201 Aportes a la seguridad social en salud publica",
+            "DISPONIBLE": df.loc[filtro_1018, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1018, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1018, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1018, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1018, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        # FOMAG_CSF (1019)
+        filtro_1019 = (df["Codigo"] == "2-100-I001") & (ultimos_cuatro == 1019)
+        O2301172201202401690307101019 = {
+            "NOMBRE": "Pago de Aportes para Cesantias del perso",
+            "CONCEPTO": "O231010200301 Aportes de cesantias a fondos publicos",
+            "DISPONIBLE": df.loc[filtro_1019, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_1019, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_1019, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_1019, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_1019, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        # Total FOMAG SSF (1017-1019)
+        filtro_fomag_ssf = (df["Codigo"].isin(["2-100-I002", "2-100-I001"])) & (ultimos_cuatro.between(1017, 1019))
+        FOMAG_SSF = {
+            "NOMBRE": "---",
+            "CONCEPTO": "---",
+            "DISPONIBLE": df.loc[filtro_fomag_ssf, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_fomag_ssf, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_fomag_ssf, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_fomag_ssf, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_fomag_ssf, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        # TOTAL_DOC_SGP (1001-1019)
+        filtro_total = (df["Codigo"].isin(["2-100-I002", "2-100-I001", "1-204-I012"])) & (ultimos_cuatro.between(1001, 1019))
+        TOTAL_DOC_SGP = {
+            "NOMBRE": "---",
+            "CONCEPTO": "---",
+            "DISPONIBLE": df.loc[filtro_total, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_total, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_total, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_total, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_total, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        # --- 🔹 Crear tabla resumen ---
+        resumen_principal = pd.DataFrame(
+            [
+                O2301172201202401690307101001, O2301172201202401690307101002, O2301172201202401690307101003,
+                O2301172201202401690307101004, O2301172201202401690307101005, O2301172201202401690307101006,
+                O2301172201202401690307101007, O2301172201202401690307101008,  
+                SUELDOS,
+                O2301172201202401690307101009, O2301172201202401690307101010, O2301172201202401690307101011,
+                O2301172201202401690307101012, O2301172201202401690307101013,
+                PARAFISCALES,
+                O2301172201202401690307101014,O2301172201202401690307101015, O2301172201202401690307101016,
+                FOMAG_CSF,
+                O2301172201202401690307101017, O2301172201202401690307101018, O2301172201202401690307101019,
+                FOMAG_SSF,
+                TOTAL_DOC_SGP
+            ],
+            index=[
+                "O2301172201202401690307101001", "O2301172201202401690307101002", "O2301172201202401690307101003",
+                "O2301172201202401690307101004", "O2301172201202401690307101005", "O2301172201202401690307101006",
+                "O2301172201202401690307101007", "O2301172201202401690307101008",  
+                "SUELDOS",
+                "O2301172201202401690307101009", "O2301172201202401690307101010", "O2301172201202401690307101011",
+                "O2301172201202401690307101012", "O2301172201202401690307101013",
+                "PARAFISCALES",
+                "O2301172201202401690307101014","O2301172201202401690307101015", "O2301172201202401690307101016",
+                "FOMAG_CSF",
+                "O2301172201202401690307101017", "O2301172201202401690307101018", "O2301172201202401690307101019",
+                "FOMAG_SSF",
+                "TOTAL_DOC_SGP"
+            ]
+        )
+        
+        resumen = resumen_principal.copy()
+        
+        return df, resumen
+         
+    except Exception as e:
+        st.error(f"❌ Error en procesar_datos_SGP_primera_infancia_detallada: {str(e)}")
+        import traceback
+        st.error(f"Detalle: {traceback.format_exc()}")
+        return None, None
+
+# =============================================================================
+# FUNCIÓN DE PROCESAMIENTO SGP PRIMARIA BÁSICA Y MEDIA - DETALLADA (con NOMBRE y CONCEPTO)
+# =============================================================================
+
+def procesar_datos_SGP_primaria_basica_media_detallada(fuerza_actualizacion=False):
+    """Función específica para procesar datos de SGP - Primaria Básica y Media (códigos 3033-3086) con detalle"""
+    df = cargar_datos_originales(_fuerza_actualizacion=fuerza_actualizacion)
+    
+    if df is None:
+        return None, None
+    
+    try:        
+        ultimos_cuatro = pd.to_numeric(
+            df["Codigo_O"].astype(str).str[-4:], 
+            errors="coerce"
+        )
+        
+        st.session_state.df_backup = df.copy()
+        
+        # --- 🔹 DEFINIR FILTROS INDIVIDUALES PARA PRIMARIA BÁSICA Y MEDIA ---
+        
+        # SUELDOS (3033-3041)
+        filtro_3033 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3033)
+        O2301172201202401690307103033 = {
+            "NOMBRE": "Pago de Personal Docente",
+            "CONCEPTO": "O231010100101 Sueldo basico",
+            "DISPONIBLE": df.loc[filtro_3033, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3033, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3033, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3033, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3033, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3034 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3034)
+        O2301172201202401690307103034 = {
+            "NOMBRE": "Pago de Personal Directivo Docente",
+            "CONCEPTO": "O231010100101 Sueldo basico",
+            "DISPONIBLE": df.loc[filtro_3034, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3034, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3034, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3034, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3034, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3035 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3035)
+        O2301172201202401690307103035 = {
+            "NOMBRE": "Pago de Ascensos en escalafon del Personal",
+            "CONCEPTO": "O231010100101 Sueldo basico",
+            "DISPONIBLE": df.loc[filtro_3035, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3035, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3035, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3035, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3035, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3036 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3036)
+        O2301172201202401690307103036 = {
+            "NOMBRE": "Pago de horas extras del personal docent",
+            "CONCEPTO": "O231010100102 Horas extras, dominicales, festivos y recargos",
+            "DISPONIBLE": df.loc[filtro_3036, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3036, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3036, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3036, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3036, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3037 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3037)
+        O2301172201202401690307103037 = {
+            "NOMBRE": "Pago de Personal Docente- prima de servicio",
+            "CONCEPTO": "O231010100106 Prima de servicio",
+            "DISPONIBLE": df.loc[filtro_3037, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3037, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3037, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3037, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3037, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3038 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3038)
+        O2301172201202401690307103038 = {
+            "NOMBRE": "Pago de Personal Docente - prima de vacaciones",
+            "CONCEPTO": "O23101010010802 Prima de vacaciones",
+            "DISPONIBLE": df.loc[filtro_3038, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3038, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3038, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3038, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3038, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3039 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3039)
+        O2301172201202401690307103039 = {
+            "NOMBRE": "Pago de Personal Docente - prima de navidad",
+            "CONCEPTO": "O23101010010801 Prima de navidad",
+            "DISPONIBLE": df.loc[filtro_3039, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3039, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3039, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3039, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3039, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3040 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3040)
+        O2301172201202401690307103040 = {
+            "NOMBRE": "Pago de Personal Docente- subsidio de alimentación",
+            "CONCEPTO": "O231010100104 Subsidio de alimentacion",
+            "DISPONIBLE": df.loc[filtro_3040, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3040, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3040, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3040, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3040, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3041 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3041)
+        O2301172201202401690307103041 = {
+            "NOMBRE": "Pago Auxili de transporte personal docente",
+            "CONCEPTO": "O231010100105 Auxilio de Transporte",
+            "DISPONIBLE": df.loc[filtro_3041, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3041, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3041, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3041, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3041, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        # Total SUELDOS (3033-3041)
+        filtro_sueldos = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro.between(3033, 3041))
+        SUELDOS = {
+            "NOMBRE": "---",
+            "CONCEPTO": "---",
+            "DISPONIBLE": df.loc[filtro_sueldos, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_sueldos, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_sueldos, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_sueldos, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_sueldos, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        # PARAFISCALES (3042-3051)
+        filtro_3042 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3042)
+        O2301172201202401690307103042 = {
+            "NOMBRE": "Pago de Aportes para las Cajas de Compension",
+            "CONCEPTO": "O231010200401 Compensar",
+            "DISPONIBLE": df.loc[filtro_3042, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3042, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3042, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3042, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3042, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3043 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3043)
+        O2301172201202401690307103043 = {
+            "NOMBRE": "Pago de Aportes para las Cajas de Compensacion",
+            "CONCEPTO": "O231010200401 Compensar",
+            "DISPONIBLE": df.loc[filtro_3043, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3043, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3043, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3043, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3043, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3044 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3044)
+        O2301172201202401690307103044 = {
+            "NOMBRE": "Pago de Aportes para el ICBF personal docente",
+            "CONCEPTO": "O2310102006 Aportes al ICBF",
+            "DISPONIBLE": df.loc[filtro_3044, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3044, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3044, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3044, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3044, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3045 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3045)
+        O2301172201202401690307103045 = {
+            "NOMBRE": "Pago de Aportes para el ICBF del Personal",
+            "CONCEPTO": "O2310102006 Aportes al ICBF",
+            "DISPONIBLE": df.loc[filtro_3045, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3045, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3045, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3045, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3045, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3046 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3046)
+        O2301172201202401690307103046 = {
+            "NOMBRE": "Pago de Aportes para Institutos Tecnicos",
+            "CONCEPTO": "O2310102009 Aportes a escuelas industriales e institutos tecnicos",
+            "DISPONIBLE": df.loc[filtro_3046, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3046, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3046, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3046, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3046, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3047 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3047)
+        O2301172201202401690307103047 = {
+            "NOMBRE": "Pago de Aportes para Institutos Tecnicos",
+            "CONCEPTO": "O2310102009 Aportes a escuelas industriales e institutos tecnicos",
+            "DISPONIBLE": df.loc[filtro_3047, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3047, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3047, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3047, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3047, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3048 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3048)
+        O2301172201202401690307103048 = {
+            "NOMBRE": "Pago de Aportes para el SENA del Personal",
+            "CONCEPTO": "O2310102007 Aportes al SENA",
+            "DISPONIBLE": df.loc[filtro_3048, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3048, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3048, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3048, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3048, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3049 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3049)
+        O2301172201202401690307103049 = {
+            "NOMBRE": "Pago de Aportes para el SENA del Personal",
+            "CONCEPTO": "O2310102007 Aportes al SENA",
+            "DISPONIBLE": df.loc[filtro_3049, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3049, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3049, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3049, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3049, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3050 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3050)
+        O2301172201202401690307103050 = {
+            "NOMBRE": "Pago de Aportes para la ESAP personal docente",
+            "CONCEPTO": "O2310102008 Aportes a la ESAP",
+            "DISPONIBLE": df.loc[filtro_3050, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3050, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3050, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3050, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3050, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3051 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3051)
+        O2301172201202401690307103051 = {
+            "NOMBRE": "Pago de Aportes para la ESAP personal docente",
+            "CONCEPTO": "O2310102008 Aportes a la ESAP",
+            "DISPONIBLE": df.loc[filtro_3051, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3051, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3051, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3051, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3051, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        # Total PARAFISCALES (3042-3051)
+        filtro_parafiscales = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro.between(3042, 3051))
+        PARAFISCALES = {
+            "NOMBRE": "---",
+            "CONCEPTO": "---",
+            "DISPONIBLE": df.loc[filtro_parafiscales, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_parafiscales, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_parafiscales, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_parafiscales, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_parafiscales, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        # FOMAG (3052-3063)
+        filtro_3052 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3052)
+        O2301172201202401690307103052 = {
+            "NOMBRE": "Pago de Aportes para Salud del personal",
+            "CONCEPTO": "O231010200201 Aportes a la seguridad social en salud publica",
+            "DISPONIBLE": df.loc[filtro_3052, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3052, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3052, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3052, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3052, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3053 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3053)
+        O2301172201202401690307103053 = {
+            "NOMBRE": "Pago de Aportes para salud del personal",
+            "CONCEPTO": "O231010200201 Aportes a la seguridad social en salud publica",
+            "DISPONIBLE": df.loc[filtro_3053, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3053, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3053, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3053, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3053, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3054 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3054)
+        O2301172201202401690307103054 = {
+            "NOMBRE": "Pago de Aportes para Pension del personal",
+            "CONCEPTO": "O231010200101 Aportes a la seguridad social en pensiones publicas",
+            "DISPONIBLE": df.loc[filtro_3054, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3054, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3054, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3054, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3054, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3055 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3055)
+        O2301172201202401690307103055 = {
+            "NOMBRE": "Pago de Aportes para Pension del personal",
+            "CONCEPTO": "O231010200101 Aportes a la seguridad social en pensiones publicas",
+            "DISPONIBLE": df.loc[filtro_3055, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3055, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3055, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3055, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3055, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3056 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3056)
+        O2301172201202401690307103056 = {
+            "NOMBRE": "Pago de Aportes para Cesantias del personal",
+            "CONCEPTO": "O231010200301 Aportes de cesantias a fondos publicos",
+            "DISPONIBLE": df.loc[filtro_3056, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3056, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3056, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3056, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3056, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3057 = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro == 3057)
+        O2301172201202401690307103057 = {
+            "NOMBRE": "Pago de Aportes para Cesantias del personal",
+            "CONCEPTO": "O231010200301 Aportes de cesantias a fondos publicos",
+            "DISPONIBLE": df.loc[filtro_3057, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3057, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3057, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3057, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3057, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        # Total FOMAG CSF (3052-3057)
+        filtro_fomag_csf = (df["Codigo"] == "2-100-I002") & (ultimos_cuatro.between(3052, 3057))
+        FOMAG_CSF = {
+        "NOMBRE": "---",
+        "CONCEPTO": "---",
+        "DISPONIBLE": df.loc[filtro_fomag_csf, "DISPONIBLE"].sum(),
+        "RP EMITIDOS": df.loc[filtro_fomag_csf, "RP EMITIDOS"].sum(),
+        "GIROS ACUMULADOS": df.loc[filtro_fomag_csf, "GIROS ACUMULADOS"].sum(),
+        "SALDO DE APROPIACION": df.loc[filtro_fomag_csf, "SALDO DE APROPIACION"].sum(),
+        "RECURSOS SIN EJECUTAR": df.loc[filtro_fomag_csf, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        # FOMAG_Empleado (3058-3059) - Codigo 2-100-I002 y 2-100-I001
+        filtro_3058 = (df["Codigo"].isin(["2-100-I002", "2-100-I001", "1-200-I038"])) & (ultimos_cuatro == 3058)
+        O2301172201202401690307103058 = {
+            "NOMBRE": "Pago de Personal Docente SSF",
+            "CONCEPTO": "O231010100101 Sueldo basico",
+            "DISPONIBLE": df.loc[filtro_3058, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3058, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3058, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3058, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3058, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3059 = (df["Codigo"].isin(["2-100-I002", "2-100-I001", "1-200-I038"])) & (ultimos_cuatro == 3059)
+        O2301172201202401690307103059 = {
+            "NOMBRE": "Pago de Personal Directivo  Docente SSF",
+            "CONCEPTO": "O231010100101 Sueldo basico",
+            "DISPONIBLE": df.loc[filtro_3059, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3059, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3059, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3059, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3059, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        # FOMAG_SSF_Patron (3060-3063) - Codigo 2-100-I001
+        filtro_3060 = (df["Codigo"].isin(["2-100-I002", "2-100-I001", "1-200-I038"])) & (ultimos_cuatro == 3060)
+        O2301172201202401690307103060 = {
+            "NOMBRE": "Pago de Aportes para salud del personal",
+            "CONCEPTO": "O231010200201 Aportes a la seguridad social en salud publica",
+            "DISPONIBLE": df.loc[filtro_3060, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3060, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3060, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3060, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3060, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3061 = (df["Codigo"].isin(["2-100-I002", "2-100-I001", "1-200-I038"])) & (ultimos_cuatro == 3061)
+        O2301172201202401690307103061 = {
+            "NOMBRE": "Pago de Aportes para salud del personal",
+            "CONCEPTO": "O231010200201 Aportes a la seguridad social en salud publica",
+            "DISPONIBLE": df.loc[filtro_3061, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3061, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3061, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3061, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3061, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3062 = (df["Codigo"].isin(["2-100-I002", "2-100-I001", "1-200-I038"])) & (ultimos_cuatro == 3062)
+        O2301172201202401690307103062 = {
+            "NOMBRE": "Pago de Aportes para Cesantias del personal",
+            "CONCEPTO": "O231010200301 Aportes de cesantias a fondos publicos",
+            "DISPONIBLE": df.loc[filtro_3062, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3062, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3062, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3062, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3062, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        filtro_3063 = (df["Codigo"] == "2-100-I001") & (ultimos_cuatro == 3063)
+        O2301172201202401690307103063 = {
+            "NOMBRE": "Pago de Aportes para Cesantias del personal",
+            "CONCEPTO": "O231010200301 Aportes de cesantias a fondos publicos",
+            "DISPONIBLE": df.loc[filtro_3063, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_3063, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_3063, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_3063, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_3063, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        # Total FOMAG SSF
+        filtro_fomag_ssf = (df["Codigo"].isin(["2-100-I002", "2-100-I001", "1-200-I038"])) & (ultimos_cuatro.between(3058, 3063))
+        FOMAG_SSF = {
+            "NOMBRE": "---",
+            "CONCEPTO": "---",
+            "DISPONIBLE": df.loc[filtro_fomag_ssf, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_fomag_ssf, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_fomag_ssf, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_fomag_ssf, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_fomag_ssf, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        
+        # TOTAL_SGP_P8033 (3033-3063)
+        filtro_total = (df["Codigo"].isin(["2-100-I002", "2-100-I001", "2-100-I026", "1-204-I012", "1-200-I038"])) & (ultimos_cuatro.between(3033, 3063))
+        TOTAL_SGP_P8033 = {
+            "NOMBRE": "---",
+            "CONCEPTO": "---",
+            "DISPONIBLE": df.loc[filtro_total, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_total, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_total, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_total, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_total, "RECURSOS SIN EJECUTAR"].sum()
+        }
+        
+        # --- 🔹 Crear tabla resumen ---
+        resumen_principal = pd.DataFrame(
+            [
+                O2301172201202401690307103033, O2301172201202401690307103034, O2301172201202401690307103035,
+                O2301172201202401690307103036, O2301172201202401690307103037, O2301172201202401690307103038,
+                O2301172201202401690307103039, O2301172201202401690307103040, O2301172201202401690307103041,  
+                SUELDOS,
+                O2301172201202401690307103042, O2301172201202401690307103043, O2301172201202401690307103044,
+                O2301172201202401690307103045, O2301172201202401690307103046, O2301172201202401690307103047,
+                O2301172201202401690307103048, O2301172201202401690307103049, O2301172201202401690307103050,
+                O2301172201202401690307103051,
+                PARAFISCALES,
+                O2301172201202401690307103052, O2301172201202401690307103053, O2301172201202401690307103054,
+                O2301172201202401690307103055, O2301172201202401690307103056, O2301172201202401690307103057,
+                FOMAG_CSF,
+                O2301172201202401690307103058, O2301172201202401690307103059, O2301172201202401690307103060,
+                O2301172201202401690307103061, O2301172201202401690307103062, O2301172201202401690307103063,
+                FOMAG_SSF,
+                TOTAL_SGP_P8033
+            ],
+            index=[
+                "O2301172201202401690307103033", "O2301172201202401690307103034", "O2301172201202401690307103035",
+                "O2301172201202401690307103036", "O2301172201202401690307103037", "O2301172201202401690307103038",
+                "O2301172201202401690307103039", "O2301172201202401690307103040", "O2301172201202401690307103041",  
+                "SUELDOS",
+                "O2301172201202401690307103042", "O2301172201202401690307103043", "O2301172201202401690307103044",
+                "O2301172201202401690307103045", "O2301172201202401690307103046", "O2301172201202401690307103047",
+                "O2301172201202401690307103048", "O2301172201202401690307103049", "O2301172201202401690307103050",
+                "O2301172201202401690307103051",
+                "PARAFISCALES",
+                "O2301172201202401690307103052", "O2301172201202401690307103053", "O2301172201202401690307103054",
+                "O2301172201202401690307103055", "O2301172201202401690307103056", "O2301172201202401690307103057",
+                "FOMAG_CSF",
+                "O2301172201202401690307103058", "O2301172201202401690307103059", "O2301172201202401690307103060",
+                "O2301172201202401690307103061", "O2301172201202401690307103062", "O2301172201202401690307103063",
+                "FOMAG_SSF",
+                "TOTAL_SGP_P8033"
+            ]
+        )
+        
+        resumen = resumen_principal.copy()
+        
+        return df, resumen
+         
+    except Exception as e:
+        st.error(f"❌ Error en procesar_datos_SGP_primaria_basica_media_detallada: {str(e)}")
+        import traceback
+        st.error(f"Detalle: {traceback.format_exc()}")
+        return None, None
+
 
 # =============================================================================
 # FUNCIONES DE VISUALIZACIÓN
@@ -2675,6 +3559,161 @@ def mostrar_tabla_SGPP_principal(resumen):
     st.markdown(html_tabla, unsafe_allow_html=True)
 
 # =============================================================================
+# FUNCIÓN DE VISUALIZACIÓN SGP PRIMERA INFANCIA - DETALLADA
+# =============================================================================
+
+def mostrar_tabla_SGP_primera_infancia_detallada(resumen):
+    if resumen is None or resumen.empty:
+        st.warning("No hay datos para mostrar")
+        return
+
+    # Crear una copia para formatear
+    resumen_formateado = resumen.copy()
+    
+    # Formatear SOLO las columnas numéricas
+    columnas_numericas = ['DISPONIBLE', 'RP EMITIDOS', 'GIROS ACUMULADOS', 
+                         'SALDO DE APROPIACION', 'RECURSOS SIN EJECUTAR']
+    
+    for col in columnas_numericas:
+        if col in resumen_formateado.columns:
+            resumen_formateado[col] = resumen_formateado[col].apply(
+                lambda x: f"${x:,.0f}".replace(",", ".")
+                if pd.notnull(x) and isinstance(x, (int, float)) else "$0"
+            )
+
+    st.markdown(
+        "<div class='titulo-tabla'>📊 EJECUCIÓN PRESUPUESTAL DOCENTES PRIMERA INFANCIA SGP</div>",
+        unsafe_allow_html=True
+    )
+
+    html_tabla = """
+<div class="tabla-container">
+<table class="tabla-personalizada">
+<thead>
+<tr>
+<th class="encabezado-fila">CÓDIGO</th>
+<th class="encabezado-texto">NOMBRE</th>
+<th class="encabezado-texto">CONCEPTO</th>
+<th>DISPONIBLE</th>
+<th>RP EMITIDOS</th>
+<th>GIROS ACUMULADOS</th>
+<th>SALDO DE APROPIACION</th>
+<th>RECURSOS SIN EJECUTAR</th>
+</tr>
+</thead>
+<tbody>
+"""
+    filas_totales = {
+        "SUELDOS": "fila-total", 
+        "PARAFISCALES": "fila-total-final",
+        "FOMAG_CSF": "fila-total-general",
+        "FOMAG_SSF": "fila-total-general",
+        "TOTAL_DOC_SGP": "fila-total"
+    }
+    
+    for idx, row in resumen_formateado.iterrows():
+        clase_fila = filas_totales.get(idx, "")
+        html_tabla += f"""
+<tr class="{clase_fila}">
+<td class="encabezado-fila">{idx}</td>
+<td class="texto-reducido">{row.get('NOMBRE', '-')}</td>
+<td class="texto-reducido">{row.get('CONCEPTO', '-')}</td>
+<td class="numero">{row.get('DISPONIBLE', '$0')}</td>
+<td class="numero">{row.get('RP EMITIDOS', '$0')}</td>
+<td class="numero">{row.get('GIROS ACUMULADOS', '$0')}</td>
+<td class="numero">{row.get('SALDO DE APROPIACION', '$0')}</td>
+<td class="numero">{row.get('RECURSOS SIN EJECUTAR', '$0')}</td>
+</tr>
+"""
+
+    html_tabla += """
+</tbody>
+</table>
+</div>
+"""
+
+    st.markdown(html_tabla, unsafe_allow_html=True)
+
+
+# =============================================================================
+# FUNCIÓN DE VISUALIZACIÓN SGP PRIMARIA BÁSICA Y MEDIA - DETALLADA
+# =============================================================================
+
+def mostrar_tabla_SGP_primaria_basica_media_detallada(resumen):
+    if resumen is None or resumen.empty:
+        st.warning("No hay datos para mostrar")
+        return
+
+    # Crear una copia para formatear
+    resumen_formateado = resumen.copy()
+    
+    # Formatear SOLO las columnas numéricas
+    columnas_numericas = ['DISPONIBLE', 'RP EMITIDOS', 'GIROS ACUMULADOS', 
+                         'SALDO DE APROPIACION', 'RECURSOS SIN EJECUTAR']
+    
+    for col in columnas_numericas:
+        if col in resumen_formateado.columns:
+            resumen_formateado[col] = resumen_formateado[col].apply(
+                lambda x: f"${x:,.0f}".replace(",", ".")
+                if pd.notnull(x) and isinstance(x, (int, float)) else "$0"
+            )
+
+    st.markdown(
+        "<div class='titulo-tabla'>📊 EJECUCIÓN PRESUPUESTAL DOCENTES PRIMARIA BÁSICA MEDIA SGP</div>",
+        unsafe_allow_html=True
+    )
+
+    html_tabla = """
+<div class="tabla-container">
+<table class="tabla-personalizada">
+<thead>
+<tr>
+<th class="encabezado-fila">CÓDIGO</th>
+<th class="encabezado-texto">NOMBRE</th>
+<th class="encabezado-texto">CONCEPTO</th>
+<th>DISPONIBLE</th>
+<th>RP EMITIDOS</th>
+<th>GIROS ACUMULADOS</th>
+<th>SALDO DE APROPIACION</th>
+<th>RECURSOS SIN EJECUTAR</th>
+</tr>
+</thead>
+<tbody>
+"""
+    filas_totales = {
+        "SUELDOS": "fila-total", 
+        "PARAFISCALES": "fila-total-final",
+        "FOMAG_CSF": "fila-total-general",
+        "FOMAG_SSF": "fila-total-general", 
+        "TOTAL_SGP_P8033": "fila-total"
+    }
+    
+    for idx, row in resumen_formateado.iterrows():
+        clase_fila = filas_totales.get(idx, "")
+        html_tabla += f"""
+<tr class="{clase_fila}">
+<td class="encabezado-fila">{idx}</td>
+<td class="texto-reducido">{row.get('NOMBRE', '-')}</td>
+<td class="texto-reducido">{row.get('CONCEPTO', '-')}</td>
+<td class="numero">{row.get('DISPONIBLE', '$0')}</td>
+<td class="numero">{row.get('RP EMITIDOS', '$0')}</td>
+<td class="numero">{row.get('GIROS ACUMULADOS', '$0')}</td>
+<td class="numero">{row.get('SALDO DE APROPIACION', '$0')}</td>
+<td class="numero">{row.get('RECURSOS SIN EJECUTAR', '$0')}</td>
+</tr>
+"""
+
+    html_tabla += """
+</tbody>
+</table>
+</div>
+"""
+
+    st.markdown(html_tabla, unsafe_allow_html=True)
+
+
+
+# =============================================================================
 # PANTALLAS
 # =============================================================================
 def mostrar_pantalla_inicial():
@@ -2690,6 +3729,8 @@ def mostrar_pantalla_inicial():
     with col3:
         st.image("logo_alcaldía_mayor.png", width=250, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
+    # 🔹 NUEVO: Mostrar fecha de actualización en la pantalla inicial
+    mostrar_fecha_actualizacion()
     
     # Botones
     st.markdown("<div class='contenedor-botones'>", unsafe_allow_html=True)
@@ -2740,6 +3781,9 @@ def mostrar_pantalla_por_fuente():
         st.image("logo_alcaldía_mayor.png", width=70, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
     
+    # Mostrar fecha de actualización
+    mostrar_fecha_actualizacion()
+    
     # BOTÓN DE ACTUALIZACIÓN PROMINENTE
     col_boton, col_espacio = st.columns([1, 5])
     with col_boton:
@@ -2766,11 +3810,35 @@ def mostrar_pantalla_por_fuente():
     if resumen is not None:
         mostrar_tabla_sgp(resumen)
         
+        # =========================================================================
+        # 🔹 BOTÓN DE DESCARGA EXCEL - TABLERO PRINCIPAL
+        # =========================================================================
+        st.divider()
+        st.subheader("📥 Exportar a Excel")
+        
+        # Descarga del Tablero Principal
+        excel_tablero = exportar_a_excel_formateado(
+            [resumen], 
+            ["TABLERO_PRINCIPAL"], 
+            ["SGP"]
+        )
+        
+        st.download_button(
+            label="📥 Descargar Tablero Principal",
+            data=excel_tablero,
+            file_name=f"TABLERO_PRINCIPAL_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
+            type="primary",
+            help="Descarga la tabla del tablero principal con todos los formatos y colores"
+        )
+        
         # INFO DE ACTUALIZACIÓN
         st.divider()
         col_info1, col_info2 = st.columns(2)
         with col_info1:
-            st.caption(f"📅 {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+            fecha = st.session_state.get('fecha_actualizacion', datetime.now().strftime('%d/%m/%Y %H:%M'))
+            st.caption(f"📅 {fecha}")
         with col_info2:
             st.caption(f"📊 {len(df)} registros cargados" if df is not None else "📊 Datos no disponibles")
     else:
@@ -2796,6 +3864,9 @@ def mostrar_pantalla_recursos_propios():
     with col3:
         st.image("logo_alcaldía_mayor.png", width=150, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
+     # 🔹 NUEVO: Mostrar fecha de actualización
+    mostrar_fecha_actualizacion()
     
     # =========================================================================
     # BOTÓN DE ACTUALIZACIÓN GLOBAL (funciona para todas las secciones)
@@ -3040,7 +4111,7 @@ def mostrar_pantalla_recursos_propios():
         st.caption("✅ Datos actualizados correctamente" if fuerza else "📊 Usando datos en caché")
 
 # =============================================================================
-# PANTALLA DOCENTES SGP
+# PANTALLA DOCENTES SGP - CON 3 TABLAS DETALLADAS
 # =============================================================================
 
 def mostrar_pantalla_sgp():
@@ -3066,39 +4137,200 @@ def mostrar_pantalla_sgp():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Botón actualizar datos
-    if st.button("🔄 Actualizar datos SGP", key="actualizar_sgp_principal"):
-        st.cache_data.clear()
-        st.rerun()
+    # Mostrar fecha de actualización
+    mostrar_fecha_actualizacion()
 
-    # IMPORTANTE:
-    # Aquí debes llamar TU función correcta
-    df, resumen = procesar_datos_SGP_principal(
-        fuerza_actualizacion=False
-    )
+    # =========================================================================
+    # BOTÓN DE ACTUALIZACIÓN GLOBAL
+    # =========================================================================
+    col_actualizar, _ = st.columns([1, 3])
+    with col_actualizar:
+        if st.button("🔄 Actualizar TODOS los Datos SGP", key="actualizar_todos_sgp", use_container_width=True):
+            st.cache_data.clear()
+            st.session_state.force_update_sgp = True
+            st.rerun()
 
-    if resumen is not None and not resumen.empty:
+    # Usar la bandera para todas las cargas
+    fuerza = st.session_state.get('force_update_sgp', False)
 
-        # IMPORTANTE:
-        # Aquí llamas TU tabla personalizada HTML
-        mostrar_tabla_SGPP_principal(resumen)
+    # =========================================================================
+    # 1. TABLA TOTAL (resumen general)
+    # =========================================================================
+    st.subheader("🌐 TABLA RESUMEN EJECUCIÓN PRESUPUESTAL DOCENTES SGP")
 
-        # Exportar Excel
-        archivo_excel = exportar_a_excel_formateado(
-            [resumen],
-            nombres_hojas=["DOCENTES_SGP"],
-            tipos_tablas=["SGP"]
-        )
+    col_total, _ = st.columns([1, 3])
+    with col_total:
+        if st.button("🔄 Actualizar TOTAL", key="actualizar_total_sgp", use_container_width=True):
+            st.cache_data.clear()
+            st.session_state.force_update_total_sgp = True
+            st.rerun()
 
-        st.download_button(
-            label="📥 Descargar Excel DOCENTES SGP",
-            data=archivo_excel,
-            file_name="DOCENTES_SGP.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+    fuerza_total = st.session_state.get('force_update_total_sgp', fuerza)
 
+    with st.spinner("📊 Procesando datos TOTAL SGP..."):
+        df, resumen = procesar_datos_SGP_principal(fuerza_actualizacion=fuerza_total)
+        
+        if 'force_update_total_sgp' in st.session_state:
+            st.session_state.force_update_total_sgp = False
+
+    if df is not None:
+        if resumen is not None:
+            mostrar_tabla_SGPP_principal(resumen)
+        else:
+            st.error("❌ No se pudieron procesar los datos TOTAL SGP")
     else:
-        st.warning("No se encontraron datos para DOCENTES SGP")
+        st.error("❌ No se pudo cargar el archivo de datos")
+
+    st.divider()
+
+    # =========================================================================
+    # 2. TABLA PRIMERA INFANCIA (detallada)
+    # =========================================================================
+    st.subheader("👶🏻 EJECUCIÓN PRESUPUESTAL DOCENTES PRIMERA INFANCIA SGP")
+
+    col_pi, _ = st.columns([1, 3])
+    with col_pi:
+        if st.button("🔄 Actualizar Primera Infancia SGP", key="actualizar_pi_sgp", use_container_width=True):
+            st.cache_data.clear()
+            st.session_state.force_update_pi_sgp = True
+            st.rerun()
+
+    fuerza_pi = st.session_state.get('force_update_pi_sgp', fuerza)
+
+    with st.spinner("📊 Procesando datos Primera Infancia SGP..."):
+        df, resumen_pi = procesar_datos_SGP_primera_infancia_detallada(fuerza_actualizacion=fuerza_pi)
+        
+        if 'force_update_pi_sgp' in st.session_state:
+            st.session_state.force_update_pi_sgp = False
+
+    if df is not None:
+        if resumen_pi is not None:
+            mostrar_tabla_SGP_primera_infancia_detallada(resumen_pi)
+        else:
+            st.error("❌ No se pudieron procesar los datos Primera Infancia SGP")
+    else:
+        st.error("❌ No se pudo cargar el archivo de datos")
+
+    st.divider()
+
+    # =========================================================================
+    # 3. TABLA PRIMARIA BÁSICA Y MEDIA (detallada)
+    # =========================================================================
+    st.subheader("👩🏻‍🏫 👨🏻‍🏫 EJECUCIÓN PRESUPUESTAL DOCENTES PRIMARIA BÁSICA MEDIA SGP")
+
+    col_pbm, _ = st.columns([1, 3])
+    with col_pbm:
+        if st.button("🔄 Actualizar PBM SGP", key="actualizar_pbm_sgp", use_container_width=True):
+            st.cache_data.clear()
+            st.session_state.force_update_pbm_sgp = True
+            st.rerun()
+
+    fuerza_pbm = st.session_state.get('force_update_pbm_sgp', fuerza)
+
+    with st.spinner("📊 Procesando datos Primaria Básica y Media SGP..."):
+        df, resumen_pbm = procesar_datos_SGP_primaria_basica_media_detallada(fuerza_actualizacion=fuerza_pbm)
+        
+        if 'force_update_pbm_sgp' in st.session_state:
+            st.session_state.force_update_pbm_sgp = False
+
+    if df is not None:
+        if resumen_pbm is not None:
+            mostrar_tabla_SGP_primaria_basica_media_detallada(resumen_pbm)
+        else:
+            st.error("❌ No se pudieron procesar los datos PBM SGP")
+    else:
+        st.error("❌ No se pudo cargar el archivo de datos")
+
+    # =========================================================================
+    # BOTONES DE DESCARGA EXCEL
+    # =========================================================================
+    st.divider()
+    st.subheader("📥 Exportar a Excel")
+
+    # Crear columnas para botones de descarga
+    col_descarga1, col_descarga2, col_descarga3, col_descarga4 = st.columns(4)
+
+    # Obtener los dataframes procesados
+    with st.spinner("Preparando datos con formatos..."):
+        # Recargar o usar datos en cache
+        _, resumen_total = procesar_datos_SGP_principal()
+        _, resumen_pi = procesar_datos_SGP_primera_infancia_detallada()
+        _, resumen_pbm = procesar_datos_SGP_primaria_basica_media_detallada()
+
+    with col_descarga1:
+        if resumen_total is not None:
+            excel_total = exportar_a_excel_formateado([resumen_total], ["TOTAL_SGP"], ["SGP"])
+            st.download_button(
+                label="📥 Descargar TOTAL",
+                data=excel_total,
+                file_name=f"SGP_TOTAL_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+                help="Incluye colores y formatos como en pantalla"
+            )
+        else:
+            st.button("📥 Descargar TOTAL", disabled=True, use_container_width=True)
+
+    with col_descarga2:
+        if resumen_pi is not None:
+            excel_pi = exportar_a_excel_formateado([resumen_pi], ["PRIMERA_INFANCIA_SGP"], ["SGP"])
+            st.download_button(
+                label="📥 Descargar Primera Infancia",
+                data=excel_pi,
+                file_name=f"SGP_PRIMERA_INFANCIA_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+                help="Incluye colores y formatos como en pantalla"
+            )
+        else:
+            st.button("📥 Descargar Primera Infancia", disabled=True, use_container_width=True)
+
+    with col_descarga3:
+        if resumen_pbm is not None:
+            excel_pbm = exportar_a_excel_formateado([resumen_pbm], ["PRIMARIA_BASICA_MEDIA_SGP"], ["SGP"])
+            st.download_button(
+                label="📥 Descargar PBM",
+                data=excel_pbm,
+                file_name=f"SGP_PBM_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+                help="Incluye colores y formatos como en pantalla"
+            )
+        else:
+            st.button("📥 Descargar PBM", disabled=True, use_container_width=True)
+
+    with col_descarga4:
+        # Descargar TODO en un solo archivo
+        if all(r is not None for r in [resumen_total, resumen_pi, resumen_pbm]):
+            excel_completo = exportar_a_excel_formateado(
+                [resumen_total, resumen_pi, resumen_pbm],
+                ["TOTAL_SGP", "PRIMERA_INFANCIA_SGP", "PRIMARIA_BASICA_MEDIA_SGP"],
+                ["SGP", "SGP", "SGP"]
+            )
+            st.download_button(
+                label="📦 Descargar TODO (3 hojas)",
+                data=excel_completo,
+                file_name=f"SGP_COMPLETO_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+                type="primary",
+                help="Incluye todas las tablas SGP con sus formatos originales"
+            )
+        else:
+            st.button("📦 Descargar TODO (3 hojas)", disabled=True, use_container_width=True)
+
+    # =========================================================================
+    # INFO DE ACTUALIZACIÓN FINAL
+    # =========================================================================
+    st.divider()
+    col_info1, col_info2 = st.columns(2)
+    with col_info1:
+        fecha = st.session_state.get('fecha_actualizacion', datetime.now().strftime('%d/%m/%Y %H:%M'))
+        st.caption(f"📅 {fecha}")
+    with col_info2:
+        if 'force_update_sgp' in st.session_state:
+            st.session_state.force_update_sgp = False
+        st.caption("✅ Datos actualizados correctamente" if fuerza else "📊 Usando datos en caché")
 
 # =============================================================================
 # MAIN
