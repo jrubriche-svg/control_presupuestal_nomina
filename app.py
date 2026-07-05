@@ -209,20 +209,38 @@ def cargar_estilos():
             margin-bottom: 10px;
             font-weight: bold;
         }
+        
+        /* ==========================
+           CONTENEDOR DE TABLA CON SCROLL
+           ========================== */
         .tabla-container {
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: visible;
             border: 3px solid #b30000;
             border-radius: 10px;
-            overflow: hidden;
             margin: 20px 0;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            -webkit-overflow-scrolling: touch;
+            position: relative;
         }
+        
         .tabla-personalizada {
             width: 100%;
             border-collapse: collapse;
             font-family: Arial, sans-serif;
             font-size: 13px;
+            min-width: 900px;
+            position: relative;
         }
-        .tabla-personalizada th {
+        
+        /* ==========================
+           ENCABEZADOS - SIEMPRE ARRIBA
+           ========================== */
+        .tabla-personalizada thead th {
+            position: sticky;
+            top: 0;
+            z-index: 30;
             background-color: #b30000;
             color: white;
             font-weight: bold;
@@ -232,40 +250,188 @@ def cargar_estilos():
             font-size: 13px;
             line-height: 1.2;
         }
+        
         .tabla-personalizada td {
             padding: 6px 4px;
             text-align: center;
             border: 2px solid #ddd;
             line-height: 1.2;
-        }
-        .tabla-personalizada tr:nth-child(even):not(.fila-total) {
-            background-color: #f9f9f9;
-        }
-        .tabla-personalizada tr:nth-child(odd):not(.fila-total) {
             background-color: white;
         }
-        .tabla-personalizada tr:hover:not(.fila-total) {
-            background-color: #f0f0f0;
-            transition: background-color 0.3s;
+        
+        /* ==========================
+           🔹 TAMAÑO LIGERAMENTE REDUCIDO PARA LA PRIMERA COLUMNA (CÓDIGO)
+           ========================== */
+        .tabla-personalizada thead th:first-child,
+        .tabla-personalizada tbody td:first-child {
+            font-size: 11px !important;
+            padding: 5px 3px !important;
         }
-        .fila-total {
+        
+        /* ==========================
+           COLUMNAS FIJAS
+           ========================== */
+        
+        /* PRIMERA COLUMNA (CÓDIGO) */
+        .tabla-personalizada thead th:first-child,
+        .tabla-personalizada tbody td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 20;
+            min-width: 85px;
+            max-width: 120px;
+            background-color: #b30000;
+            color: white;
+            border-right: 3px solid #8b0000;
+        }
+        
+        .tabla-personalizada tbody td:first-child {
+            background-color: #f5f5f5;
+            color: #333;
+            text-align: left;
+            font-weight: bold;
+            border-right: 2px solid #ccc;
+        }
+        
+        /* SEGUNDA COLUMNA (NOMBRE) */
+        .tabla-personalizada thead th:nth-child(2),
+        .tabla-personalizada tbody td:nth-child(2) {
+            position: sticky;
+            left: 85px;
+            z-index: 19;
+            min-width: 145px;
+            max-width: 185px;
+            background-color: #b30000;
+            color: white;
+            border-right: 3px solid #8b0000;
+        }
+        
+        .tabla-personalizada tbody td:nth-child(2) {
+            background-color: #f5f5f5;
+            color: #333;
+            border-right: 2px solid #ccc;
+        }
+        
+        /* TERCERA COLUMNA (CONCEPTO) - SOLO PARA TABLAS DETALLADAS */
+        .tabla-personalizada thead th:nth-child(3),
+        .tabla-personalizada tbody td:nth-child(3) {
+            position: sticky;
+            left: 230px;
+            z-index: 18;
+            min-width: 165px;
+            max-width: 225px;
+            background-color: #b30000;
+            color: white;
+            border-right: 3px solid #8b0000;
+        }
+        
+        .tabla-personalizada tbody td:nth-child(3) {
+            background-color: #f5f5f5;
+            color: #333;
+            text-align: left;
+            border-right: 2px solid #ccc;
+        }
+        
+        /* ==========================
+           ENCABEZADOS DE COLUMNAS FIJAS - POR ENCIMA DE TODO
+           ========================== */
+        .tabla-personalizada thead th:first-child {
+            z-index: 40 !important;
+        }
+        
+        .tabla-personalizada thead th:nth-child(2) {
+            z-index: 39 !important;
+        }
+        
+        .tabla-personalizada thead th:nth-child(3) {
+            z-index: 38 !important;
+        }
+        
+        /* ==========================
+           SOMBRA DE PROFUNDIDAD
+           ========================== */
+        .tabla-personalizada tbody td:first-child::after,
+        .tabla-personalizada tbody td:nth-child(2)::after,
+        .tabla-personalizada tbody td:nth-child(3)::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: -6px;
+            width: 6px;
+            height: 100%;
+            background: linear-gradient(to right, rgba(0,0,0,0.15), transparent);
+            pointer-events: none;
+        }
+        
+        /* ==========================
+           COLORES DE FILAS ALTERNADAS
+           ========================== */
+        .tabla-personalizada tbody tr:nth-child(even):not(.fila-total) td {
+            background-color: #f9f9f9;
+        }
+        
+        .tabla-personalizada tbody tr:nth-child(even):not(.fila-total) td:first-child,
+        .tabla-personalizada tbody tr:nth-child(even):not(.fila-total) td:nth-child(2),
+        .tabla-personalizada tbody tr:nth-child(even):not(.fila-total) td:nth-child(3) {
+            background-color: #f9f9f9;
+        }
+        
+        .tabla-personalizada tbody tr:nth-child(odd):not(.fila-total) td {
+            background-color: #ffffff;
+        }
+        
+        .tabla-personalizada tbody tr:nth-child(odd):not(.fila-total) td:first-child,
+        .tabla-personalizada tbody tr:nth-child(odd):not(.fila-total) td:nth-child(2),
+        .tabla-personalizada tbody tr:nth-child(odd):not(.fila-total) td:nth-child(3) {
+            background-color: #ffffff;
+        }
+        
+                
+        /* ==========================
+           FILAS TOTALES
+           ========================== */
+        .fila-total td {
             background-color: #ff6b6b !important;
             font-weight: bold;
             color: #000;
             font-size: 13px;
         }
-        .fila-total-final {
+        .fila-total td:first-child,
+        .fila-total td:nth-child(2),
+        .fila-total td:nth-child(3) {
+            background-color: #ff6b6b !important;
+            color: #000 !important;
+        }
+        
+        .fila-total-final td {
             background-color: #4CAF50 !important;
             font-weight: bold;
             color: white;
             font-size: 14px;
         }
-        .fila-total-general {
+        .fila-total-final td:first-child,
+        .fila-total-final td:nth-child(2),
+        .fila-total-final td:nth-child(3) {
+            background-color: #4CAF50 !important;
+            color: white !important;
+        }
+        
+        .fila-total-general td {
             background-color: #2196F3 !important;
             font-weight: bold;
             color: white;
             font-size: 15px;
         }
+        .fila-total-general td:first-child,
+        .fila-total-general td:nth-child(2),
+        .fila-total-general td:nth-child(3) {
+            background-color: #2196F3 !important;
+            color: white !important;
+        }
+        
+        /* ==========================
+           ESTILOS ADICIONALES
+           ========================== */
         .encabezado-fila {
             background-color: #b30000;
             color: white;
@@ -275,11 +441,14 @@ def cargar_estilos():
             padding: 6px 8px !important;
             line-height: 1.2;
         }
+        
         .numero {
             font-family: 'Courier New', monospace;
             font-weight: bold;
             font-size: 12px;
+            text-align: right !important;
         }
+        
         .titulo-tabla {
             color: #b30000;
             text-align: center;
@@ -287,6 +456,7 @@ def cargar_estilos():
             font-size: 20px;
             font-weight: bold;
         }
+        
         .boton-menu {
             background-color: #D50000;
             color: white;
@@ -307,6 +477,7 @@ def cargar_estilos():
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
         }
+        
         .contenedor-botones {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -316,10 +487,12 @@ def cargar_estilos():
             margin-left: auto;
             margin-right: auto;
         }
+        
         .pantalla-inicial {
             text-align: center;
             padding: 10px;
         }
+        
         .boton-volver {
             background-color: #666;
             color: white;
@@ -332,16 +505,19 @@ def cargar_estilos():
         .boton-volver:hover {
             background-color: #555;
         }
+        
         .contenedor-logos {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
         }
+        
         .logo {
             max-width: 250px;
             height: auto;
         }
+        
         .boton-actualizar {
             background-color: #4CAF50;
             color: white;
@@ -355,7 +531,7 @@ def cargar_estilos():
         .boton-actualizar:hover {
             background-color: #45a049;
         }
-         /* 🔹 NUEVO ESTILO PARA COLUMNAS DE TEXTO LARGO */
+        
         .texto-reducido {
             font-size: 11px !important;
             line-height: 1.1 !important;
@@ -365,12 +541,117 @@ def cargar_estilos():
             max-width: 150px !important;
         }
         
-        /* Opcional: Estilo para encabezados de estas columnas */
         .encabezado-texto {
             font-size: 11px !important;
             padding: 6px 2px !important;
             white-space: normal !important;
-        }    
+        }
+        
+        /* ==========================
+           RESPONSIVE MÓVIL
+           ========================== */
+        @media (max-width: 768px) {
+            .tabla-personalizada {
+                font-size: 10px !important;
+                min-width: 770px !important;
+            }
+            
+            .tabla-personalizada thead th,
+            .tabla-personalizada tbody td {
+                padding: 4px 3px !important;
+                font-size: 9px !important;
+            }
+            
+            .tabla-personalizada thead th:first-child,
+            .tabla-personalizada tbody td:first-child {
+                min-width: 55px !important;
+                max-width: 75px !important;
+                font-size: 8px !important;
+            }
+            
+            .tabla-personalizada thead th:nth-child(2),
+            .tabla-personalizada tbody td:nth-child(2) {
+                left: 55px !important;
+                min-width: 85px !important;
+                max-width: 105px !important;
+                font-size: 8px !important;
+            }
+            
+            .tabla-personalizada thead th:nth-child(3),
+            .tabla-personalizada tbody td:nth-child(3) {
+                left: 140px !important;
+                min-width: 95px !important;
+                max-width: 135px !important;
+                font-size: 8px !important;
+            }
+            
+            .tabla-personalizada tbody td:nth-child(n+4) {
+                min-width: 65px !important;
+                font-size: 8px !important;
+            }
+            
+            .numero {
+                font-size: 8px !important;
+            }
+            
+            .texto-reducido {
+                font-size: 7px !important;
+                max-width: 50px !important;
+            }
+            
+            .encabezado-fila {
+                font-size: 7px !important;
+                padding: 2px 3px !important;
+            }
+            
+            .encabezado-texto {
+                font-size: 7px !important;
+                padding: 2px 3px !important;
+            }
+            
+            .titulo-tabla {
+                font-size: 14px !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .tabla-personalizada {
+                min-width: 620px !important;
+                font-size: 8px !important;
+            }
+            
+            .tabla-personalizada thead th:first-child,
+            .tabla-personalizada tbody td:first-child {
+                min-width: 40px !important;
+                max-width: 50px !important;
+                font-size: 7px !important;
+            }
+            
+            .tabla-personalizada thead th:nth-child(2),
+            .tabla-personalizada tbody td:nth-child(2) {
+                left: 40px !important;
+                min-width: 55px !important;
+                max-width: 75px !important;
+                font-size: 7px !important;
+            }
+            
+            .tabla-personalizada thead th:nth-child(3),
+            .tabla-personalizada tbody td:nth-child(3) {
+                left: 95px !important;
+                min-width: 65px !important;
+                max-width: 95px !important;
+                font-size: 7px !important;
+            }
+            
+            .tabla-personalizada tbody td:nth-child(n+4) {
+                min-width: 48px !important;
+                font-size: 7px !important;
+            }
+            
+            .numero {
+                font-size: 7px !important;
+            }
+        }
         </style>
     """, unsafe_allow_html=True)
 
