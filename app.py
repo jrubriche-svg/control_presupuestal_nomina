@@ -4614,36 +4614,45 @@ def mostrar_pantalla_sgp():
         st.caption("✅ Datos actualizados correctamente" if fuerza else "📊 Usando datos en caché")
 
 # =============================================================================
-# MAIN - MODIFICADO PARA CARGAR DATOS UNA SOLA VEZ
+# MAIN - CON PRECARGA FORZADA Y ACTUALIZACIÓN RÁPIDA
 # =============================================================================
 def main():
     # Inicializar session state
     if "pagina_actual" not in st.session_state:
         st.session_state.pagina_actual = "INICIO"
     
-    # 🔹 NUEVO: Cargar datos UNA SOLA VEZ al inicio de la app
-    if "datos_cargados" not in st.session_state:
-        st.session_state.datos_cargados = False
-    
-    # Solo cargar si no se han cargado antes
-    if not st.session_state.datos_cargados:
-        with st.spinner("🔄 Cargando datos iniciales..."):
+    # 🔹 NUEVO: Siempre verificar si hay fecha, si no, cargar datos
+    if "fecha_actualizacion" not in st.session_state or st.session_state.fecha_actualizacion == "No disponible":
+        # Mostrar un spinner mientras se cargan los datos
+        with st.spinner("🔄 Cargando datos..."):
             try:
-                # Cargar datos UNA SOLA VEZ
+                # Cargar datos para obtener la fecha
                 df = cargar_datos_originales(_fuerza_actualizacion=False)
                 if df is not None:
+                    st.session_state.df_global = df
                     st.session_state.datos_cargados = True
-                    st.session_state.df_global = df  # Guardar el DataFrame para uso posterior
-                    # La fecha ya se guardó en session_state dentro de cargar_datos_originales
-                    st.toast("✅ Datos cargados correctamente", icon="✅")
+                    # La fecha ya se guardó en cargar_datos_originales
             except Exception as e:
                 st.session_state.fecha_actualizacion = "Error al cargar"
                 st.warning(f"⚠️ No se pudieron cargar los datos: {str(e)[:50]}...")
     
-    # Cargar estilos (siempre se cargan)
+    # 🔹 NUEVO: Si hay datos pero no fecha, extraerla del DataFrame
+    elif "df_global" in st.session_state and st.session_state.df_global is not None:
+        if "fecha_actualizacion" not in st.session_state or st.session_state.fecha_actualizacion == "No disponible":
+            df = st.session_state.df_global
+            if "FECHA" in df.columns:
+                try:
+                    df["FECHA"] = pd.to_datetime(df["FECHA"], format="%d/%m/%Y", errors="coerce")
+                    fecha_reciente = df["FECHA"].max()
+                    if pd.notna(fecha_reciente):
+                        st.session_state.fecha_actualizacion = fecha_reciente.strftime("%d de %B de %Y")
+                except:
+                    pass
+    
+    # Cargar estilos
     cargar_estilos()
     
-    # Navegación (ya no cargan datos, usan los precargados)
+    # Navegación
     if st.session_state.pagina_actual == "INICIO":
         mostrar_pantalla_inicial()
     elif st.session_state.pagina_actual == "POR_FUENTE":
@@ -4655,4 +4664,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
