@@ -4614,30 +4614,36 @@ def mostrar_pantalla_sgp():
         st.caption("✅ Datos actualizados correctamente" if fuerza else "📊 Usando datos en caché")
 
 # =============================================================================
-# MAIN - MODIFICADO PARA PRECARGAR DATOS
+# MAIN - MODIFICADO PARA CARGAR DATOS UNA SOLA VEZ
 # =============================================================================
 def main():
     # Inicializar session state
     if "pagina_actual" not in st.session_state:
         st.session_state.pagina_actual = "INICIO"
     
-    # 🔹 NUEVO: Precargar datos al inicio para tener la fecha disponible
-    if "fecha_actualizacion" not in st.session_state or st.session_state.fecha_actualizacion == "No disponible":
+    # 🔹 NUEVO: Cargar datos UNA SOLA VEZ al inicio de la app
+    if "datos_cargados" not in st.session_state:
+        st.session_state.datos_cargados = False
+    
+    # Solo cargar si no se han cargado antes
+    if not st.session_state.datos_cargados:
         with st.spinner("🔄 Cargando datos iniciales..."):
             try:
-                # Hacer una carga ligera solo para obtener la fecha
+                # Cargar datos UNA SOLA VEZ
                 df = cargar_datos_originales(_fuerza_actualizacion=False)
                 if df is not None:
+                    st.session_state.datos_cargados = True
+                    st.session_state.df_global = df  # Guardar el DataFrame para uso posterior
                     # La fecha ya se guardó en session_state dentro de cargar_datos_originales
-                    pass
+                    st.toast("✅ Datos cargados correctamente", icon="✅")
             except Exception as e:
-                # Si falla, establecer un valor por defecto
-                st.session_state.fecha_actualizacion = "Cargando..."
+                st.session_state.fecha_actualizacion = "Error al cargar"
+                st.warning(f"⚠️ No se pudieron cargar los datos: {str(e)[:50]}...")
     
-    # Cargar estilos
+    # Cargar estilos (siempre se cargan)
     cargar_estilos()
     
-    # Navegación
+    # Navegación (ya no cargan datos, usan los precargados)
     if st.session_state.pagina_actual == "INICIO":
         mostrar_pantalla_inicial()
     elif st.session_state.pagina_actual == "POR_FUENTE":
