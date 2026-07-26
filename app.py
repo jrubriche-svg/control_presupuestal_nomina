@@ -1005,6 +1005,41 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
             "SALDO DE APROPIACION": df.loc[filtro_TOTAL_GENERAL, "SALDO DE APROPIACION"].sum(),
             "RECURSOS SIN EJECUTAR": df.loc[filtro_TOTAL_GENERAL, "RECURSOS SIN EJECUTAR"].sum() 
         }
+        filtro_Asignar_Apoyo = (df["Codigo"].isin(["1-100-F001"]) 
+            & ultimos_cuatro.between(3088, 3120))
+                 
+        ASIGNAR_APOYO = {
+            "INICIAL": df.loc[filtro_Asignar_Apoyo, "INICIAL"].sum(),
+            "DISPONIBLE": df.loc[filtro_Asignar_Apoyo, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_Asignar_Apoyo, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_Asignar_Apoyo, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_Asignar_Apoyo, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_Asignar_Apoyo, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_Bienestar_integral = (df["Codigo"].isin(["1-100-F001", "1-100-F039"]) 
+            & ultimos_cuatro.between(4089, 4099))
+                         
+        BIENESTAR_INTEGRAL = {
+            "INICIAL": df.loc[filtro_Bienestar_integral, "INICIAL"].sum(),
+            "DISPONIBLE": df.loc[filtro_Bienestar_integral, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_Bienestar_integral, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_Bienestar_integral, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_Bienestar_integral, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_Bienestar_integral, "RECURSOS SIN EJECUTAR"].sum() 
+        }
+
+        filtro_TOTAL_8033 = (df["Codigo"].isin(["2-100-I002", "2-100-I001","1-100-F001", "2-100-I026", "2-100-I017", "1-204-I012", "1-100-F039"]) 
+            & ultimos_cuatro.between(1001, 4099))
+                 
+        TOTAL_8033 = {
+            "INICIAL": df.loc[filtro_TOTAL_8033, "INICIAL"].sum(),
+            "DISPONIBLE": df.loc[filtro_TOTAL_8033, "DISPONIBLE"].sum(),
+            "RP EMITIDOS": df.loc[filtro_TOTAL_8033, "RP EMITIDOS"].sum(),
+            "GIROS ACUMULADOS": df.loc[filtro_TOTAL_8033, "GIROS ACUMULADOS"].sum(),
+            "SALDO DE APROPIACION": df.loc[filtro_TOTAL_8033, "SALDO DE APROPIACION"].sum(),
+            "RECURSOS SIN EJECUTAR": df.loc[filtro_TOTAL_8033, "RECURSOS SIN EJECUTAR"].sum() 
+        }
 
         # --- 🔹 Crear tabla resumen ---
         resumen_principal = pd.DataFrame(
@@ -1012,12 +1047,12 @@ def procesar_datos_sgp(fuerza_actualizacion=False):
                 csf,                                    
                 FOMAG_Empleado, FOMAG_SSF_Patron, FOMAG_CSF, TOTAL_DOC_SGP,
                 ADTIVOS_SGP, TOTAL_SGP_P8033, DOC_RP, ADTIVOS_RP, SENTENCIAS,
-                TOTAL_RP_P8033, PENSIONADOS, TOTAL_GENERAL                   
+                TOTAL_RP_P8033, PENSIONADOS, TOTAL_GENERAL, ASIGNAR_APOYO, BIENESTAR_INTEGRAL, TOTAL_8033                     
             ],
             index=[
                 "SGP CSF (Salarios + Parafiscales)", "FOMAG_Empleado", "FOMAG_SSF_Patron", 
                 "FOMAG_CSF", "TOTAL_DOC_SGP", "ADTIVOS_SGP", "TOTAL_SGP_P8033", "DOC_RP", "ADTIVOS_RP", "SENTENCIAS",
-                "TOTAL_RP_P8033", "PENSIONADOS", "TOTAL_GENERAL"
+                "TOTAL_RP_P8033", "PENSIONADOS", "TOTAL_GENERAL", "ASIGNAR_APOYO", "BIENESTAR_INTEGRAL", "TOTAL_8033"
             ]
         )
 
@@ -3492,7 +3527,8 @@ def mostrar_tabla_sgp(resumen):
         "TOTAL_DOC_SGP": "fila-total",
         "TOTAL_SGP_P8033": "fila-total-final",
         "TOTAL_RP_P8033": "fila-total-final",
-        "TOTAL_GENERAL": "fila-total-general"
+        "TOTAL_GENERAL": "fila-total-general",
+        "TOTAL_8033": "fila-total-general"
     }
 
     for idx, row in resumen_formateado.iterrows():
