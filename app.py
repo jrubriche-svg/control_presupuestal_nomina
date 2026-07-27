@@ -665,6 +665,8 @@ def obtener_fecha_actualizacion():
     """
     try:
         BASE_URL = "https://docs.google.com/spreadsheets/d/1MK6NNx5YEqo_19xdSwpXg_WRYd52GPTpFPeVMYeZCNo/export?format=csv&gid=0"
+
+        URL_MENSAJES_TABLERO = "https://docs.google.com/spreadsheets/d/1_ULHCXS9GSOCmv-e3pA2cekzUo7IIksH8H8JOijWZjw/export?format=csv&gid=0"     
         
         # Leer SOLO 1 fila (la más rápida posible)
         df = pd.read_csv(BASE_URL, nrows=1)
@@ -834,6 +836,32 @@ def cargar_datos_originales(_fuerza_actualizacion=False):
         
         return None
 
+URL_MENSAJES_TABLERO = "https://docs.google.com/spreadsheets/d/1_ULHCXS9GSOCmv-e3pA2cekzUo7IIksH8H8JOijWZjw/export?format=csv&gid=0"
+
+# =============================================================================
+# CARGAR MENSAJES DEL TABLERO PRINCIPAL
+# =============================================================================
+
+@st.cache_data(ttl=60)
+def cargar_mensajes_tablero():
+    """
+    Carga los mensajes de la columna 'TABLERO PRINCIPAL' desde la hoja de mensajes.
+    Returns:
+        Lista de strings con los mensajes no vacíos.
+    """
+    try:
+        df_mensajes = pd.read_csv(URL_MENSAJES_TABLERO)
+        
+        if "TABLERO PRINCIPAL" not in df_mensajes.columns:
+            return []
+        
+        mensajes = df_mensajes["TABLERO PRINCIPAL"].dropna().tolist()
+        mensajes = [msg.strip() for msg in mensajes if isinstance(msg, str) and msg.strip()]
+        
+        return mensajes
+        
+    except Exception as e:
+        return []
 # =============================================================================
 # FUNCIÓN DE PROCESAMIENTO TABLERO PRINCIPAL
 # =============================================================================
@@ -3489,7 +3517,6 @@ def procesar_datos_SGP_primaria_basica_media_detallada(fuerza_actualizacion=Fals
 # =============================================================================
 # FUNCIONES DE VISUALIZACIÓN
 # =============================================================================
-
 def mostrar_tabla_sgp(resumen):
     if resumen is None or resumen.empty:
         st.warning("No hay datos para mostrar")
@@ -3552,6 +3579,39 @@ def mostrar_tabla_sgp(resumen):
 """
 
     st.markdown(html_tabla, unsafe_allow_html=True)
+    
+    # =========================================================================
+    # 🔹 MOSTRAR MENSAJES DIRECTAMENTE DEBAJO DE LA TABLA
+    # =========================================================================
+    mensajes = cargar_mensajes_tablero()
+    
+    if mensajes:
+        # Crear un contenedor simple y compacto para los mensajes
+        st.markdown("""
+        <div style="
+            background: #FFFDE7;
+            border: 1px solid #FFD54F;
+            border-radius: 6px;
+            padding: 10px 15px;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        ">
+        """, unsafe_allow_html=True)
+        
+        # Mostrar cada mensaje en una línea separada, sin numeración
+        for mensaje in mensajes:
+            st.markdown(f"""
+            <div style="
+                padding: 4px 0;
+                font-size: 13px;
+                color: #4E342E;
+                border-bottom: 1px solid #FFF8E1;
+            ">
+                {mensaje}
+            </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 # =============================================================================
@@ -4081,6 +4141,7 @@ def mostrar_pantalla_inicial():
     st.markdown("</div>", unsafe_allow_html=True)
     # 🔹 NUEVO: Mostrar fecha de actualización en la pantalla inicial
     mostrar_fecha_actualizacion()
+      
     
     # Botones
     st.markdown("<div class='contenedor-botones'>", unsafe_allow_html=True)
